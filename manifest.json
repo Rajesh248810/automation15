@@ -1,0 +1,21 @@
+{
+  "name": "Meesho Hub - Product Deals & Tracker",
+  "short_name": "Meesho Hub",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f17",
+  "theme_color": "#db2777",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/color/192/shopping-bag.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://img.icons8.com/color/512/shopping-bag.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

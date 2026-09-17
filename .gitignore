@@ -1,0 +1,45 @@
+# ====================================================================
+# Git Ignore Rules - Protect Credentials & Runtime Data
+# ====================================================================
+
+# Secrets & Environment Variables
+.env
+*.env
+*.env.local
+
+# Telegram Sessions (Contains private authentication keys)
+*.session
+*.session-journal
+
+# Meesho Account Sessions & JSONs
+meesho_account_*.json
+harvested_accounts.json
+auth_state.json
+fresh_emulator_session.json
+
+# Local Runtime Data, Caches & Orders
+data/
+order_tracker/
+order_bot_web/
+portable_app/
+*.zip
+
+# Python Bytecode & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Logs & Debug Output
+*.log
+fresh_results.txt
+test_*.log
+chg_btn.log
+multi_out.log
+
+# Scratch Scripts & Temp Files
+scratch/
+scratch*
+test_*

@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meesho Autonomous Hunter - Dual Provider Controller</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #0b0f19; }
+        .terminal { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        .prov-tab.active {
+            background: linear-gradient(135deg, #4f46e5, #4338ca) !important;
+            color: #ffffff !important;
+            border-color: #818cf8 !important;
+            box-shadow: 0 0 16px rgba(99, 102, 241, 0.5);
+        }
+        .server-card.selected {
+            background-color: #1e1b4b !important;
+            border-color: #818cf8 !important;
+            box-shadow: 0 0 12px rgba(129, 140, 248, 0.4);
+        }
+        .qty-btn.active, .margin-btn.active {
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            border-color: #818cf8 !important;
+        }
+    </style>
+</head>
+<body class="text-slate-200 min-h-screen flex flex-col p-4 md:p-8">
+
+    <!-- Password Modal Overlay -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 p-8 rounded-3xl max-w-sm w-full shadow-2xl text-center space-y-6">
+            <div class="w-16 h-16 bg-indigo-600/20 border border-indigo-500/30 rounded-2xl mx-auto flex items-center justify-center text-indigo-400 text-2xl">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-bold text-white">Admin Authentication</h2>
+                <p class="text-xs text-slate-400 mt-1">Enter PIN to access Meesho Hunter Dashboard</p>
+            </div>
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <input 
+                        id="pin-input" 
+                        type="password" 
+                        maxlength="6" 
+                        placeholder="Enter 6-digit PIN..." 
+                        class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-2xl py-3.5 px-4 text-center text-xl font-mono tracking-widest text-white outline-none transition-all"
+                        required
+                        autofocus
+                    />
+                </div>
+                <div id="auth-error" class="hidden text-xs text-rose-400 font-semibold">Incorrect PIN! Please try again.</div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 rounded-2xl shadow-lg transition-all cursor-pointer">
+                    Unlock Dashboard
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Container -->
+    <div id="main-content" class="max-w-6xl mx-auto w-full space-y-6 hidden">
+        
+        <!-- Header with Dual Balances -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-2xl shadow-lg">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-white tracking-wide">Meesho Multi-Provider Hunter</h1>
+                    <p class="text-xs text-slate-400">Telegram Bot + OTPDoctor & uOTP Multi-Server Engine</p>
+                </div>
+            </div>
+
+            <!-- Balances & Status -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl text-right">
+                    <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">PremiumOTP</p>
+                    <h3 id="prem-balance" class="text-base font-black text-amber-400">₹0.00</h3>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl text-right">
+                    <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">uOTP Balance</p>
+                    <h3 id="uotp-balance" class="text-base font-black text-cyan-400">₹0.00</h3>
+                </div>
+                <div class="bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl text-right">
+                    <p class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">OTPDoctor Balance</p>
+                    <h3 id="otp-balance" class="text-base font-black text-emerald-400">₹0.00</h3>
+                </div>
+                <div id="status-pill" class="bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl flex items-center gap-2">
+                    <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+                    <span id="status-text" class="text-xs font-bold text-slate-300">IDLE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Margin Configuration Card (For http://localhost:8080/) -->
+        <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950/40 border border-indigo-900/50 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-tag text-pink-400"></i> Customer Price Checker Margin
+                    </span>
+                    <span id="margin-badge" class="text-xs font-bold bg-pink-950 text-pink-300 border border-pink-800 px-2 py-0.5 rounded-full">+₹45 Added</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-1">
+                    Sets the extra profit margin shown on <a href="http://localhost:8080/" target="_blank" class="text-pink-400 hover:underline font-mono">http://localhost:8080/</a> (UPI + Margin):
+                </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="setMarginPreset(35, this)" class="margin-btn px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">+₹35</button>
+                <button type="button" onclick="setMarginPreset(40, this)" class="margin-btn px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">+₹40</button>
+                <button type="button" onclick="setMarginPreset(45, this)" class="margin-btn active px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">+₹45</button>
+                <button type="button" onclick="setMarginPreset(50, this)" class="margin-btn px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">+₹50</button>
+                
+                <div class="flex items-center gap-1.5 bg-slate-950 border border-slate-700 px-3 py-1 rounded-xl">
+                    <span class="text-xs text-slate-400">₹</span>
+                    <input id="custom-margin-input" type="number" min="0" max="500" value="45" class="w-12 bg-transparent text-white font-bold text-sm text-center outline-none" />
+                </div>
+
+                <button type="button" onclick="saveCustomMargin()" class="bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-lg transition-all flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Margin
+                </button>
+            </div>
+        </div>
+
+        <!-- Provider Selection & Multi-Server Picker Card -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl space-y-6">
+            
+            <!-- STEP 1: Provider Picker (OTPDoctor vs uOTP) -->
+            <div class="space-y-3 pb-4 border-b border-slate-800">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <div>
+                        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs">1</span>
+                            Kaha Se Hunt Karna Hai (Choose SMS Panel)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Pehle panel select karo, fir niche us panel ke saare servers choose kar sakte ho:</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    <!-- PremiumOTP Tab -->
+                    <button type="button" onclick="switchProviderTab('premiumotp')" id="tab-premiumotp" class="prov-tab p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-2xl text-left transition-all cursor-pointer">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid fa-crown text-amber-400 text-lg"></i>
+                                <span class="font-bold text-base text-white">PremiumOTP</span>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-amber-300 bg-amber-950/80 px-2.5 py-1 rounded-lg border border-amber-800/80" id="tab-prem-bal">₹50.00</span>
+                        </div>
+                        <div class="text-xs text-slate-300 mt-2">India Srv 14, 11, 3, 25, 19 (₹7.5 - ₹20)</div>
+                    </button>
+
+                    <!-- OTPDoctor Tab -->
+                    <button type="button" onclick="switchProviderTab('otpdoctor')" id="tab-otpdoctor" class="prov-tab active p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-2xl text-left transition-all cursor-pointer">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid fa-user-doctor text-emerald-400 text-lg"></i>
+                                <span class="font-bold text-base text-white">OTPDoctor</span>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-emerald-300 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-800/80" id="tab-doc-bal">₹0.00</span>
+                        </div>
+                        <div class="text-xs text-slate-300 mt-2">IN-8, IN-14, IN-13, IN-4, MultiSms, etc.</div>
+                    </button>
+
+                    <!-- uOTP Tab -->
+                    <button type="button" onclick="switchProviderTab('uotp')" id="tab-uotp" class="prov-tab p-4 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 rounded-2xl text-left transition-all cursor-pointer">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid fa-sim-card text-cyan-400 text-lg"></i>
+                                <span class="font-bold text-base text-white">uOTP</span>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-cyan-300 bg-cyan-950/80 px-2.5 py-1 rounded-lg border border-cyan-800/80" id="tab-uotp-bal">₹0.00</span>
+                        </div>
+                        <div class="text-xs text-slate-300 mt-2">Dedicated Servers (Server 2 to 12)</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: Multi-Server Selection For Chosen Provider -->
+            <div class="space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                        <h2 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-lg bg-indigo-600 text-white flex items-center justify-center text-xs">2</span>
+                            Server Choose Karo (Multiple Selectable &bull; Priority Based)
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">
+                            Aap jin jin servers ko select karoge, script <strong class="text-indigo-300">pehle unhi servers se OTP hunt karegi</strong>. Agar stock na ho, toh auto fallback karegi.
+                        </p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="selectAllServers()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-xl font-bold text-slate-300 transition-all">
+                            Select All
+                        </button>
+                        <button type="button" onclick="deselectAllServers()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-xl font-bold text-slate-400 transition-all">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Priority Badge -->
+                <div id="priority-summary-badge" class="bg-indigo-950/60 border border-indigo-800/80 text-indigo-300 p-3 rounded-xl text-xs font-mono flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-400"></i>
+                    <span>Selected Priority Servers: <strong id="selected-servers-text" class="text-white">IN-8, IN-14, IN-13</strong></span>
+                </div>
+
+                
+                <!-- PremiumOTP Complete 5 Servers Grid -->
+                <div id="servers-premiumotp-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 hidden">
+                    <div onclick="toggleServer('prem_in14', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono text-xs font-black text-amber-400">IN-14</span>
+                            <span class="text-[10px] font-bold text-amber-300 bg-amber-950 px-1.5 py-0.5 rounded border border-amber-800/60">₹7.5</span>
+                        </div>
+                        <div class="text-xs font-bold text-white mt-1">India Server 14</div>
+                        <div class="text-[10px] text-amber-400/80 mt-0.5 font-mono">PremiumOTP</div>
+                    </div>
+
+                    <div onclick="toggleServer('prem_in11', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono text-xs font-black text-amber-400">IN-11</span>
+                            <span class="text-[10px] font-bold text-amber-300 bg-amber-950 px-1.5 py-0.5 rounded border border-amber-800/60">₹8.0</span>
+                        </div>
+                        <div class="text-xs font-bold text-white mt-1">India Server 11</div>
+                        <div class="text-[10px] text-amber-400/80 mt-0.5 font-mono">PremiumOTP</div>
+                    </div>
+
+                    <div onclick="toggleServer('prem_in3', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono text-xs font-black text-slate-300">IN-3</span>
+                            <span class="text-[10px] font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">₹11.3</span>
+                        </div>
+                        <div class="text-xs font-bold text-white mt-1">India Server 3</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 font-mono">PremiumOTP</div>
+                    </div>
+
+                    <div onclick="toggleServer('prem_in25', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono text-xs font-black text-slate-300">IN-25</span>
+                            <span class="text-[10px] font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">₹13.0</span>
+                        </div>
+                        <div class="text-xs font-bold text-white mt-1">India Server 25</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 font-mono">PremiumOTP</div>
+                    </div>
+
+                    <div onclick="toggleServer('prem_in19', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono text-xs font-black text-slate-300">IN-19</span>
+                            <span class="text-[10px] font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-700">₹20.0</span>
+                        </div>
+                        <div class="text-xs font-bold text-white mt-1">India Server 19</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 font-mono">PremiumOTP</div>
+                    </div>
+                </div>
+
+                <!-- OTPDoctor Complete 15 Servers Grid -->
+                <div id="servers-otpdoctor-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+                    
+                    <!-- 5841: IN-8 -->
+                    <div onclick="toggleServer('in8', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-8</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹12</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 5841 &bull; 🇮🇳8</div>
+                    </div>
+
+                    <!-- 20325: IN-14 -->
+                    <div onclick="toggleServer('in14', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-14</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹13</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 20325 &bull; 🇮🇳14</div>
+                    </div>
+
+                    <!-- 7308: IN-13 -->
+                    <div onclick="toggleServer('in13', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-13</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹10</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 7308 &bull; 🇮🇳13</div>
+                    </div>
+
+                    <!-- 6038: IN-4 -->
+                    <div onclick="toggleServer('in4', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-4</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹12</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 6038 &bull; 🇮🇳4</div>
+                    </div>
+
+                    <!-- 20317: IN-5 -->
+                    <div onclick="toggleServer('in5', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-5</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹10</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 20317 &bull; 🇮🇳5</div>
+                    </div>
+
+                    <!-- 19826: IN-9 -->
+                    <div onclick="toggleServer('in9', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-9</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹9</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 19826 &bull; 🇮🇳9</div>
+                    </div>
+
+                    <!-- 12843: IN-A -->
+                    <div onclick="toggleServer('ina', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-A</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹8.5</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 12843 &bull; 🇮🇳A</div>
+                    </div>
+
+                    <!-- 13915: IN-C -->
+                    <div onclick="toggleServer('inc', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho IN-C</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹8</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 13915 &bull; 🇮🇳C</div>
+                    </div>
+
+                    <!-- 16040: MultiSms IN-2 -->
+                    <div onclick="toggleServer('multi_in2', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">MultiSms IN-2</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹12</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 16040</div>
+                    </div>
+
+                    <!-- 10619: MultiSms IN-3 -->
+                    <div onclick="toggleServer('multi_in3', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">MultiSms IN-3</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹9.50</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 10619</div>
+                    </div>
+
+                    <!-- 5655: MultiSms IN-6 -->
+                    <div onclick="toggleServer('multi_in6', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">MultiSms IN-6</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹9.50</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 5655</div>
+                    </div>
+
+                    <!-- 9318: MultiSms IN-1 -->
+                    <div onclick="toggleServer('multi_in1', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">MultiSms IN-1</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹11.50</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 9318</div>
+                    </div>
+
+                    <!-- 20346: Meesho 2 IN-A -->
+                    <div onclick="toggleServer('m2_ina', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho 2 IN-A</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹18</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 20346</div>
+                    </div>
+
+                    <!-- 11642: Meesho 2 MultiSms IN-3 -->
+                    <div onclick="toggleServer('m2_multi_in3', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho 2 Multi 3</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹11.50</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 11642</div>
+                    </div>
+
+                    <!-- 16487: Meesho 2 MultiSms IN-1 -->
+                    <div onclick="toggleServer('m2_multi_in1', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-white">Meesho 2 Multi 1</span>
+                            <span class="text-xs font-mono font-bold text-emerald-400">₹9.50</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-1">ID: 16487</div>
+                    </div>
+
+                </div>
+
+                <!-- uOTP Servers Grid -->
+                <div id="servers-uotp-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 hidden">
+                    <div onclick="toggleServer('uotp_3', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 3</div>
+                        <div class="text-[10px] text-cyan-400 mt-0.5">uOTP Srv 3</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_4', this)" class="server-card selected p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 4</div>
+                        <div class="text-[10px] text-cyan-400 mt-0.5">uOTP Srv 4</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_2', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 2</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 2</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_5', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 5</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 5</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_6', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 6</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 6</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_7', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 7</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 7</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_8', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 8</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 8</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_9', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 9</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 9</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_10', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 10</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 10</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_11', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 11</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 11</div>
+                    </div>
+
+                    <div onclick="toggleServer('uotp_12', this)" class="server-card p-3 bg-slate-800/90 border border-slate-700 rounded-xl cursor-pointer transition-all">
+                        <div class="text-xs font-bold text-white">Server 12</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5">uOTP Srv 12</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Target Account Quantity & Actions -->
+            <div class="space-y-4 pt-4 border-t border-slate-800">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300">Target Account Quantity</h3>
+                        <p class="text-xs text-slate-400">Kitne successful fresh accounts hunt karne hain:</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="setQuantity(1, this)" class="qty-btn active px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">1 Account</button>
+                        <button type="button" onclick="setQuantity(3, this)" class="qty-btn px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">3 Accounts</button>
+                        <button type="button" onclick="setQuantity(5, this)" class="qty-btn px-4 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold transition-all">5 Accounts</button>
+                        <div class="flex items-center gap-2 bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-xl ml-2">
+                            <span class="text-xs text-slate-400">Custom:</span>
+                            <input id="hunt-count" type="number" min="1" max="50" value="1" oninput="clearActiveButtons()" class="w-14 bg-transparent text-white font-bold text-sm text-center outline-none" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                    <button type="button" onclick="startHunter()" id="btn-start" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer">
+                        <i class="fa-solid fa-play text-xl"></i>
+                        <div class="text-left">
+                            <div class="text-sm">Start Priority Hunt</div>
+                            <div class="text-[10px] text-emerald-200 font-normal">Auto 120 OFF (Bucket Rs.190 / Final Rs.91 / UPI Rs.67) + SIM Buy & OTP</div>
+                        </div>
+                    </button>
+
+                    <button type="button" onclick="stopHunter()" id="btn-stop" class="bg-amber-600 hover:bg-amber-500 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer">
+                        <i class="fa-solid fa-pause text-xl"></i>
+                        <div class="text-left">
+                            <div class="text-sm">Pause / Stop</div>
+                            <div class="text-[10px] text-amber-200 font-normal">Safely stops hunter engine</div>
+                        </div>
+                    </button>
+
+                    <button type="button" onclick="emergencyCleanup()" id="btn-cleanup" class="bg-rose-600 hover:bg-rose-500 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-3 cursor-pointer">
+                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                        <div class="text-left">
+                            <div class="text-sm">Emergency Refund All</div>
+                            <div class="text-[10px] text-rose-200 font-normal">Cancels active SIMs on both panels</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Successfully Created Accounts & Live Active SIMs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Successfully Created Accounts -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i> Successfully Created Accounts
+                    </h3>
+                    <span id="success-count" class="text-[10px] font-bold bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800">0 Accounts</span>
+                </div>
+                <div id="success-accounts-list" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    <span class="text-xs text-slate-500">No accounts created in this session yet.</span>
+                </div>
+            </div>
+
+            <!-- Active / Pending SIMs on OTPDoctor / uOTP -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-xs font-bold uppercase text-slate-400 flex items-center gap-2">
+                        <i class="fa-solid fa-sim-card text-amber-400"></i> Active SIMs / Async Refund Queue
+                    </h3>
+                    <span id="active-sims-count" class="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full">0 Active</span>
+                </div>
+                <div id="active-sims-list" class="text-xs text-slate-400 space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                    <span class="text-slate-500">No active unverified SIMs.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Terminal Console Stream -->
+        <div class="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-2xl">
+            <div class="flex justify-between items-center mb-3 pb-3 border-b border-slate-900">
+                <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-rose-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                    <span class="text-xs text-slate-400 ml-2 font-mono">Live Multi-Server Engine Stream</span>
+                </div>
+                <button type="button" onclick="clearConsole()" class="text-[11px] text-slate-500 hover:text-slate-300 font-mono">Clear</button>
+            </div>
+            <pre id="console-output" class="terminal text-xs text-emerald-400 h-72 overflow-y-auto whitespace-pre-wrap leading-relaxed">Waiting for activity...</pre>
+        </div>
+    </div>
+
+    <script>
+        let currentProvider = 'otpdoctor';
+        let selectedServers = ['in8', 'in14', 'in13'];
+        let adminPin = sessionStorage.getItem('admin_pin') || '';
+
+        function checkAuth() {
+            if (adminPin === '224466') {
+                document.getElementById('auth-modal').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                fetchStatus();
+                fetchLogs();
+            } else {
+                document.getElementById('auth-modal').classList.remove('hidden');
+                document.getElementById('main-content').classList.add('hidden');
+            }
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            const pin = document.getElementById('pin-input').value.trim();
+            try {
+                const res = await fetch('/api/auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ pin: pin })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    adminPin = pin;
+                    sessionStorage.setItem('admin_pin', pin);
+                    checkAuth();
+                } else {
+                    document.getElementById('auth-error').classList.remove('hidden');
+                }
+            } catch (err) {
+                document.getElementById('auth-error').classList.remove('hidden');
+            }
+        }
+
+        function switchProviderTab(prov) {
+            currentProvider = prov;
+            document.getElementById('tab-otpdoctor').classList.toggle('active', prov === 'otpdoctor');
+            document.getElementById('tab-uotp').classList.toggle('active', prov === 'uotp');
+            document.getElementById('tab-premiumotp').classList.toggle('active', prov === 'premiumotp');
+
+            document.getElementById('servers-otpdoctor-grid').classList.toggle('hidden', prov !== 'otpdoctor');
+            document.getElementById('servers-uotp-grid').classList.toggle('hidden', prov !== 'uotp');
+            document.getElementById('servers-premiumotp-grid').classList.toggle('hidden', prov !== 'premiumotp');
+
+            if (prov === 'otpdoctor') {
+                selectedServers = ['in8', 'in14', 'in13'];
+            } else if (prov === 'premiumotp') {
+                selectedServers = ['prem_in14', 'prem_in11'];
+            } else {
+                selectedServers = ['uotp_3', 'uotp_4'];
+            }
+            updateServerSelectionUI();
+        }
+
+        function toggleServer(srvCode, el) {
+            const idx = selectedServers.indexOf(srvCode);
+            if (idx > -1) {
+                selectedServers.splice(idx, 1);
+            } else {
+                selectedServers.push(srvCode);
+            }
+            updateServerSelectionUI();
+        }
+
+        function selectAllServers() {
+            if (currentProvider === 'otpdoctor') {
+                selectedServers = ['in8', 'in14', 'in13', 'in4', 'in5', 'in9', 'ina', 'inc', 'multi_in2', 'multi_in3', 'multi_in6', 'multi_in1', 'm2_ina', 'm2_multi_in3', 'm2_multi_in1'];
+            } else if (currentProvider === 'premiumotp') {
+                selectedServers = ['prem_in14', 'prem_in11', 'prem_in3', 'prem_in25', 'prem_in19'];
+            } else {
+                selectedServers = ['uotp_2', 'uotp_3', 'uotp_4', 'uotp_5', 'uotp_6', 'uotp_7', 'uotp_8', 'uotp_9', 'uotp_10', 'uotp_11', 'uotp_12'];
+            }
+            updateServerSelectionUI();
+        }
+
+        function deselectAllServers() {
+            selectedServers = [];
+            updateServerSelectionUI();
+        }
+
+        function updateServerSelectionUI() {
+            let activeGridId = 'servers-otpdoctor-grid';
+            if (currentProvider === 'uotp') activeGridId = 'servers-uotp-grid';
+            else if (currentProvider === 'premiumotp') activeGridId = 'servers-premiumotp-grid';
+            const cards = document.getElementById(activeGridId).querySelectorAll('.server-card');
+            
+            cards.forEach(card => {
+                const srvMatch = card.getAttribute('onclick').match(/'([^']+)'/);
+                if (srvMatch) {
+                    const code = srvMatch[1];
+                    const isSel = selectedServers.includes(code);
+                    card.classList.toggle('selected', isSel);
+                }
+            });
+
+            const summaryEl = document.getElementById('selected-servers-text');
+            if (selectedServers.length === 0) {
+                summaryEl.innerText = 'None Selected (Will use all fallback servers)';
+            } else {
+                summaryEl.innerText = selectedServers.map(s => s.replace('uotp_', 'Srv ').toUpperCase()).join(', ');
+            }
+        }
+
+        function clearActiveButtons() {
+            document.querySelectorAll('.qty-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        function setQuantity(val, el) {
+            document.getElementById('hunt-count').value = val;
+            clearActiveButtons();
+            if (el) el.classList.add('active');
+        }
+
+        async function setMarginPreset(val, el) {
+            document.getElementById('custom-margin-input').value = val;
+            document.querySelectorAll('.margin-btn').forEach(b => b.classList.remove('active'));
+            if (el) el.classList.add('active');
+            await postMargin(val);
+        }
+
+        async function saveCustomMargin() {
+            const val = parseInt(document.getElementById('custom-margin-input').value) || 0;
+            document.querySelectorAll('.margin-btn').forEach(b => b.classList.remove('active'));
+            await postMargin(val);
+        }
+
+        async function postMargin(val) {
+            try {
+                const res = await fetch('/api/margin', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Pin': adminPin
+                    },
+                    body: JSON.stringify({ margin: val })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('margin-badge').innerText = `+₹${data.margin} Added`;
+                }
+            } catch (e) {
+                alert('Error updating margin');
+            }
+        }
+
+        function copyToClipboard(text, btn) {
+            navigator.clipboard.writeText(text);
+            const orig = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copied';
+            setTimeout(() => { btn.innerHTML = orig; }, 1500);
+        }
+
+        async function fetchStatus() {
+            if (adminPin !== '224466') return;
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                const docBal = `₹${(data.balance_otpdoctor || 0).toFixed(2)}`;
+                const uotpBal = `₹${(data.balance_uotp || 0).toFixed(2)}`;
+                const premBal = `₹${(data.balance_premiumotp || 0).toFixed(2)}`;
+
+                document.getElementById('otp-balance').innerText = docBal;
+                document.getElementById('uotp-balance').innerText = uotpBal;
+                document.getElementById('prem-balance').innerText = premBal;
+                document.getElementById('tab-doc-bal').innerText = docBal;
+                document.getElementById('tab-uotp-bal').innerText = uotpBal;
+                document.getElementById('tab-prem-bal').innerText = premBal;
+                
+                if (data.margin !== undefined) {
+                    document.getElementById('margin-badge').innerText = `+₹${data.margin} Added`;
+                }
+
+                const dot = document.getElementById('status-dot');
+                const text = document.getElementById('status-text');
+                
+                if (data.running) {
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                    const prog = data.state.target_count ? ` (${data.state.completed_count || 0}/${data.state.target_count})` : '';
+                    text.innerText = `RUNNING${prog}`;
+                    text.className = "text-xs font-bold text-emerald-400";
+                } else {
+                    dot.className = "w-2.5 h-2.5 rounded-full bg-slate-500";
+                    text.innerText = data.state.status === 'completed' ? 'COMPLETED' : 'IDLE';
+                    text.className = "text-xs font-bold text-slate-400";
+                }
+
+                // Render Active SIMs
+                const simsDiv = document.getElementById('active-sims-list');
+                const keys = Object.keys(data.active_sims || {});
+                document.getElementById('active-sims-count').innerText = `${keys.length} Active`;
+                if (keys.length === 0) {
+                    simsDiv.innerHTML = '<span class="text-slate-500">No active unverified SIMs.</span>';
+                } else {
+                    simsDiv.innerHTML = keys.map(k => {
+                        const s = data.active_sims[k];
+                        const provLabel = s.provider || 'OTPDoctor';
+                        return `<div class="flex justify-between items-center bg-slate-800/80 px-3 py-2 rounded-xl border border-slate-700">
+                            <span class="font-mono text-emerald-300 font-bold text-xs">+91 ${s.phone} <span class="text-slate-400 font-normal">(${s.service} &bull; ${provLabel})</span></span>
+                            <span class="text-[10px] text-amber-400 font-bold bg-amber-950/40 px-2 py-0.5 rounded-md border border-amber-800/40">Waiting OTP / Async Refund</span>
+                        </div>`;
+                    }).join('');
+                }
+
+                // Render Successful Accounts
+                const successDiv = document.getElementById('success-accounts-list');
+                const accs = data.successful_accounts || [];
+                document.getElementById('success-count').innerText = `${accs.length} Accounts`;
+                if (accs.length === 0) {
+                    successDiv.innerHTML = '<span class="text-xs text-slate-500">No accounts created in this session yet.</span>';
+                } else {
+                    successDiv.innerHTML = accs.map(a => {
+                        const timeDisplay = a.formatted_time || (a.created_at ? new Date(a.created_at * 1000).toLocaleTimeString() : '');
+                        const provTag = a.provider ? `<span class="bg-indigo-950 text-indigo-300 border border-indigo-800 px-1.5 py-0.5 rounded text-[9px] font-mono mr-1">${a.provider}</span>` : '';
+                        return `<div class="flex justify-between items-center bg-emerald-950/30 border border-emerald-800/60 p-3 rounded-xl hover:bg-emerald-950/50 transition-all">
+                            <div>
+                                <div class="font-mono text-white font-bold text-sm">+91 ${a.phone}</div>
+                                <div class="text-[11px] text-slate-400 mt-0.5">
+                                    ${provTag}
+                                    <span class="text-emerald-400 font-semibold">${a.details || 'Offer Claimed'}</span> &bull; 
+                                    <span class="text-slate-400 font-mono text-[10px]">${timeDisplay}</span>
+                                </div>
+                            </div>
+                            <button onclick="copyToClipboard('${a.phone}', this)" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-all">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>`;
+                    }).join('');
+                }
+            } catch (e) {}
+        }
+
+        async function fetchLogs() {
+            if (adminPin !== '224466') return;
+            try {
+                const res = await fetch('/api/logs');
+                const data = await res.json();
+                if (data.logs && data.logs.length > 0) {
+                    const el = document.getElementById('console-output');
+                    const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 50;
+                    el.innerText = data.logs.join('');
+                    if (isAtBottom) {
+                        el.scrollTop = el.scrollHeight;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        async function startHunter() {
+            const count = parseInt(document.getElementById('hunt-count').value) || 1;
+            try {
+                const res = await fetch('/api/start', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Pin': adminPin
+                    },
+                    body: JSON.stringify({ 
+                        count: count, 
+                        provider: currentProvider,
+                        servers: selectedServers.join(',')
+                    })
+                });
+                const data = await res.json();
+                if (!data.success) alert(data.error);
+                fetchStatus();
+                fetchLogs();
+            } catch (e) { alert('Error starting hunter'); }
+        }
+
+        async function stopHunter() {
+            try {
+                const res = await fetch('/api/stop', { 
+                    method: 'POST',
+                    headers: { 'X-Admin-Pin': adminPin }
+                });
+                const data = await res.json();
+                fetchStatus();
+            } catch (e) { alert('Error stopping hunter'); }
+        }
+
+        async function emergencyCleanup() {
+            if (!confirm('This will cancel all active SIMs on OTPDoctor and uOTP. Proceed?')) return;
+            try {
+                const res = await fetch('/api/emergency-cleanup', { 
+                    method: 'POST',
+                    headers: { 'X-Admin-Pin': adminPin }
+                });
+                const data = await res.json();
+                alert(data.output || 'Emergency cleanup completed!');
+                fetchStatus();
+            } catch (e) {}
+        }
+
+        async function clearConsole() {
+            document.getElementById('console-output').innerText = 'Logs cleared.';
+            try {
+                await fetch('/api/logs/clear', { 
+                    method: 'POST',
+                    headers: { 'X-Admin-Pin': adminPin }
+                });
+            } catch (e) {}
+        }
+
+        checkAuth();
+        updateServerSelectionUI();
+        setInterval(fetchStatus, 3000);
+        setInterval(fetchLogs, 1500);
+    </script>
+</body>
+</html>
