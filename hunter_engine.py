@@ -1,5 +1,3 @@
-from dotenv import load_dotenv
-load_dotenv()
 import asyncio
 import os
 import re
@@ -21,14 +19,14 @@ import sms_providers
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(line_buffering=True, errors="replace")
 
-API_ID = int(os.getenv("TELEGRAM_API_ID", "2040"))
-API_HASH = os.getenv("TELEGRAM_API_HASH", "")
+API_ID = 2040
+API_HASH = "b18441a1ff607e10a989891a5462e627"
 SESSION_NAME = "meesho_user_session"
 BOT_USERNAME = "MeeshoOrderBot"
 
 # Order Bot / Mini App Web API
-WEBAPP_BASE_URL = os.getenv("WEBAPP_BASE_URL", "https://pricetrackerpro.fojadomain.fun")
-WEBAPP_TOKEN = os.getenv("WEBAPP_TOKEN", "")
+WEBAPP_BASE_URL = "https://pricetrackerpro.fojadomain.fun"
+WEBAPP_TOKEN = "1729719181.5053a8bd2706f61b"
 
 DATA_DIR = os.path.join(BASE_DIR, "data")
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -151,23 +149,48 @@ def get_webapp_headers():
 def check_number_is_fresh(phone_10):
     """
     Checks number against Mini App /api/check endpoint.
-    Returns True if FRESH, False if REGISTERED / NOT FRESH.
+    STRICT: Returns True ONLY IF verified fresh (registered == False and fresh == True).
+    If registered == True, returns False.
+    If checker errors or fails, DO NOT ASSUME FRESH! Retries or returns False to prevent losing money!
     """
     url = f"{WEBAPP_BASE_URL}/api/check"
-    try:
-        r = requests.post(url, headers=get_webapp_headers(), json={"number": phone_10}, timeout=12)
-        if r.status_code == 200:
-            data = r.json()
-            results = data.get("results", [])
-            if results:
-                res = results[0]
-                if res.get("registered") is True or res.get("fresh") is False:
-                    return False
-                return True
-        return True
-    except Exception as e:
-        log(f"[!] Warning: /api/check error: {e}")
-        return True
+    for attempt in range(2):
+        try:
+            r = requests.post(url, headers=get_webapp_headers(), json={"number": phone_10}, timeout=20)
+            if r.status_code == 200:
+                data = r.json()
+                if not data.get("ok"):
+                    err = data.get("error", "")
+                    log(f"[!] Checker error: '{err}'. Attempting to auto-activate session...")
+                    try:
+                        acc_path = os.path.join(BASE_DIR, "meesho_account_7845427202.json")
+                        if os.path.exists(acc_path):
+                            with open(acc_path) as f_acc:
+                                requests.post(f"{WEBAPP_BASE_URL}/api/import", headers=get_webapp_headers(), json=json.load(f_acc), timeout=10)
+                    except Exception as e_imp:
+                        log(f"[!] Failed to auto-import session: {e_imp}")
+                    time.sleep(1)
+                    continue
+
+                results = data.get("results", [])
+                if results:
+                    res = results[0]
+                    is_registered = res.get("registered", False)
+                    is_fresh = res.get("fresh", not is_registered)
+                    
+                    if is_registered is True or is_fresh is False:
+                        log(f"[!] Number +91 {phone_10} is REGISTERED on Meesho (registered={is_registered}, fresh={is_fresh}). REJECTED!")
+                        return False
+                    else:
+                        log(f"[+] Number +91 {phone_10} is VERIFIED FRESH on Meesho! Accepted.")
+                        return True
+        except Exception as e:
+            log(f"[!] Warning: /api/check error (attempt {attempt+1}): {e}")
+            time.sleep(1)
+            
+    # SAFETY: If freshness cannot be verified, DO NOT BUY / SUBMIT!
+    log(f"[!] SAFETY: Could not verify freshness for +91 {phone_10}. Marking as UNVERIFIED (Skipping to prevent money loss).")
+    return False
 
 def import_account_to_order_bot(account_json):
     phone = account_json.get("mobile") or account_json.get("phone", "")
@@ -211,12 +234,8 @@ def import_account_to_order_bot(account_json):
 
 def is_target_offer(text: str) -> bool:
     """
-    Evaluates whether the bot message matches the target offer:
-    Offer: Upto ₹110 OFF on 1st order
-    Bucket: ₹170
-    UPI: ₹83
-    Final: ₹107
-    (Also accepts legacy ₹120 OFF / Bucket 190 if ever served)
+    STRICT MATCH: Only triggers on Upto ₹110 OFF (Bucket ₹170).
+    Must strictly reject ₹150 OFF, ₹105 OFF, ₹95 OFF, etc.
     """
     if not text:
         return False
@@ -225,52 +244,27 @@ def is_target_offer(text: str) -> bool:
     if any(w in t for w in ["setting things up", "setting up", "fetching", "already fetching", "please wait", "failed to fetch", "null"]):
         return False
 
-    clean_t = re.sub(r'[\*\_`]', '', text)
+    clean_t = re.sub(r'[\*\_`]', '', text).lower()
 
-    # 1. Primary Target: Upto ₹110 OFF (Bucket 170 / UPI 83 / Final 107)
-    has_110_off = "110 off" in clean_t.lower()
+    # STRICT REJECTION: Never trigger on 150 OFF or any other unwanted tier
+    if "150 off" in clean_t or "105 off" in clean_t or "95 off" in clean_t or "75 off" in clean_t or "60 off" in clean_t:
+        return False
+
+    # STRICT MATCH: Must be Upto ₹110 OFF AND Bucket ₹170
+    has_110_off = "110 off" in clean_t
     has_bucket_170 = bool(re.search(r'bucket.*?170', clean_t, re.IGNORECASE))
     has_upi_83 = bool(re.search(r'upi.*?83', clean_t, re.IGNORECASE))
     has_final_107 = bool(re.search(r'final.*?107', clean_t, re.IGNORECASE))
 
-    if has_110_off and (has_bucket_170 or has_upi_83 or has_final_107):
+    if has_110_off and has_bucket_170:
         return True
-    if has_upi_83 and has_final_107:
-        return True
-    if has_bucket_170 and (has_upi_83 or has_final_107):
+    if has_110_off and (has_upi_83 or has_final_107):
         return True
 
-    # 2. Legacy Support: Upto ₹120 OFF (Bucket 190 / UPI 67 / Final 91)
-    has_120_off = "120 off" in clean_t.lower()
+    # Legacy ₹120 OFF strictly with Bucket 190
+    has_120_off = "120 off" in clean_t
     has_bucket_190 = bool(re.search(r'bucket.*?190', clean_t, re.IGNORECASE))
-    has_upi_67 = bool(re.search(r'upi.*?67', clean_t, re.IGNORECASE))
-    has_final_91 = bool(re.search(r'final.*?91', clean_t, re.IGNORECASE))
-
-    if has_120_off and (has_bucket_190 or has_upi_67 or has_final_91):
-        return True
-    if has_upi_67 and has_final_91:
-        return True
-    if has_bucket_190 and (has_upi_67 or has_final_91):
-        return True
-
-    return False
-    
-    t = text.lower()
-    if any(w in t for w in ["setting things up", "setting up", "fetching", "already fetching", "please wait", "failed to fetch", "null"]):
-        return False
-
-    clean_t = re.sub(r'[\*\_`]', '', text)
-
-    has_120_off = "120 off" in clean_t.lower()
-    has_bucket_190 = bool(re.search(r'bucket.*?190', clean_t, re.IGNORECASE))
-    has_upi_67 = bool(re.search(r'upi.*?67', clean_t, re.IGNORECASE))
-    has_final_91 = bool(re.search(r'final.*?91', clean_t, re.IGNORECASE))
-
-    if has_120_off and (has_bucket_190 or has_upi_67 or has_final_91):
-        return True
-    if has_upi_67 and has_final_91:
-        return True
-    if has_bucket_190 and (has_upi_67 or has_final_91):
+    if has_120_off and has_bucket_190:
         return True
 
     return False
@@ -558,7 +552,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
                         
                         if is_target_offer(msg_text):
                             log(f"\n[+] TARGET OFFER MATCHED on Reroll #{reroll_attempts}!")
-                            log(f"[*] Matched Target (Bucket 190 / Final 91 / UPI 67):\n{msg_text[:250]}\n")
+                            log(f"[*] Matched Target Offer (Bucket 170 / Upto 110 OFF / UPI 83):\n{msg_text[:250]}\n")
                             matched = True
                             break
 
@@ -574,7 +568,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
 
                     # Offer is successfully locked!
                     target_offer_locked = True
-                    log("[+] Target Offer (Bucket 190 / Final 91 / UPI 67) LOCKED!")
+                    log("[+] Target Offer (Bucket 170 / Upto 110 OFF / UPI 83) LOCKED!")
 
                 # Step 3: Optimal SIM Selection (Standby Buffer vs Fresh Buy)
                 active_sim = None
@@ -706,7 +700,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
 
                 if account_json and account_json.get("xo") and account_json.get("user_id"):
                     log(f"[+] Successfully extracted full session JSON for +91 {phone_10} (User ID: {account_json.get('user_id')})!")
-                    account_json["discount_applied"] = 120
+                    account_json["discount_applied"] = 110
                     import_account_to_order_bot(account_json)
                 else:
                     log(f"[!] Warning: Bot did not output JSON file. Constructing session record for +91 {phone_10}...")
@@ -714,7 +708,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
                         "mobile": phone_10,
                         "phone": f"+91{phone_10}",
                         "discount_applied": 120,
-                        "target_offer": "Upto ₹120 OFF (Bucket ₹190 / UPI ₹67 / Final ₹91)",
+                        "target_offer": "Upto ₹110 OFF (Bucket ₹170 / UPI ₹83 / Final ₹107)",
                         "server": display_srv,
                         "added_at": time.strftime("%Y-%m-%d %H:%M:%S")
                     }
