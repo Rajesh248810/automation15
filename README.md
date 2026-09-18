@@ -1,7 +1,7 @@
 # 🚀 Meesho Autonomous Hunter & Order Automation Suite
 
 A complete, production-ready automation framework for **Meesho** that features:
-- **Autonomous First-Order Discount Hunter** (Targeting Upto ₹120 OFF / ₹190 Bucket / ₹67 UPI)
+- **Autonomous First-Order Discount Hunter** (Targeting Upto ₹110 OFF / ₹170 Bucket / ₹83 UPI)
 - **Multi-Provider SMS OTP Integration** (OTPDoctor, PremiumOTP, UOTP)
 - **Telegram Bot Automation Engine** (Telethon-powered automation for `@MeeshoOrderBot` and `@ckmeesho_bot`)
 - **Customer Price Checker & Order Tracker Web App** (FastAPI backend + interactive Tailwind dashboard)

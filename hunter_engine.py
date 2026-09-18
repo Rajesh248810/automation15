@@ -211,15 +211,49 @@ def import_account_to_order_bot(account_json):
 
 def is_target_offer(text: str) -> bool:
     """
-    Evaluates whether the bot message matches the exact target offer:
-    Offer: 🎉 Upto ₹120 OFF on 1st order
-    Bucket: ₹190
-    UPI: ₹67
-    Final: ₹91
-    Original: ₹398
+    Evaluates whether the bot message matches the target offer:
+    Offer: Upto ₹110 OFF on 1st order
+    Bucket: ₹170
+    UPI: ₹83
+    Final: ₹107
+    (Also accepts legacy ₹120 OFF / Bucket 190 if ever served)
     """
     if not text:
         return False
+    
+    t = text.lower()
+    if any(w in t for w in ["setting things up", "setting up", "fetching", "already fetching", "please wait", "failed to fetch", "null"]):
+        return False
+
+    clean_t = re.sub(r'[\*\_`]', '', text)
+
+    # 1. Primary Target: Upto ₹110 OFF (Bucket 170 / UPI 83 / Final 107)
+    has_110_off = "110 off" in clean_t.lower()
+    has_bucket_170 = bool(re.search(r'bucket.*?170', clean_t, re.IGNORECASE))
+    has_upi_83 = bool(re.search(r'upi.*?83', clean_t, re.IGNORECASE))
+    has_final_107 = bool(re.search(r'final.*?107', clean_t, re.IGNORECASE))
+
+    if has_110_off and (has_bucket_170 or has_upi_83 or has_final_107):
+        return True
+    if has_upi_83 and has_final_107:
+        return True
+    if has_bucket_170 and (has_upi_83 or has_final_107):
+        return True
+
+    # 2. Legacy Support: Upto ₹120 OFF (Bucket 190 / UPI 67 / Final 91)
+    has_120_off = "120 off" in clean_t.lower()
+    has_bucket_190 = bool(re.search(r'bucket.*?190', clean_t, re.IGNORECASE))
+    has_upi_67 = bool(re.search(r'upi.*?67', clean_t, re.IGNORECASE))
+    has_final_91 = bool(re.search(r'final.*?91', clean_t, re.IGNORECASE))
+
+    if has_120_off and (has_bucket_190 or has_upi_67 or has_final_91):
+        return True
+    if has_upi_67 and has_final_91:
+        return True
+    if has_bucket_190 and (has_upi_67 or has_final_91):
+        return True
+
+    return False
     
     t = text.lower()
     if any(w in t for w in ["setting things up", "setting up", "fetching", "already fetching", "please wait", "failed to fetch", "null"]):
@@ -444,7 +478,7 @@ async def acquire_fresh_number(provider_name, active_servers, service_idx_ref):
 async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers_filter=""):
     log("=" * 65)
     log(f"   TELEGRAM @MeeshoOrderBot HUNTER (TARGET: {target_count} | PROVIDER: {provider_name.upper()})")
-    log("   (Target: Upto 120 OFF | Bucket: 190 | UPI: 67 | Final: 91)")
+    log("   (Target: Upto 110 OFF | Bucket: 170 | UPI: 83 | Final: 107)")
     log("   (Optimal Flow: 3-Min OTP Timeout + Change Number Offer Preservation)")
     log("=" * 65)
 
@@ -686,7 +720,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
                     }
                     import_account_to_order_bot(fallback_record)
 
-                details = f"Upto ₹120 OFF | Bucket 190 | UPI Rs.67 | Final Rs.91 | {display_srv}"
+                details = f"Upto ₹110 OFF | Bucket 170 | UPI Rs.83 | Final Rs.107 | {display_srv}"
                 record_successful_account(f"+91{phone_10}", details, provider_name)
 
                 completed_count += 1
