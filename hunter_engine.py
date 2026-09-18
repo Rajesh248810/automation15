@@ -149,48 +149,115 @@ def get_webapp_headers():
 def check_number_is_fresh(phone_10):
     """
     Checks number against Mini App /api/check endpoint.
-    STRICT: Returns True ONLY IF verified fresh (registered == False and fresh == True).
-    If registered == True, returns False.
-    If checker errors or fails, DO NOT ASSUME FRESH! Retries or returns False to prevent losing money!
+    Returns:
+      True  -> Confirmed FRESH on Meesho
+      False -> Confirmed REGISTERED on Meesho
+      None  -> Checker unavailable / session error (triggers fallback to @manishmeeshobot)
     """
     url = f"{WEBAPP_BASE_URL}/api/check"
-    for attempt in range(2):
-        try:
-            r = requests.post(url, headers=get_webapp_headers(), json={"number": phone_10}, timeout=20)
-            if r.status_code == 200:
-                data = r.json()
-                if not data.get("ok"):
-                    err = data.get("error", "")
-                    log(f"[!] Checker error: '{err}'. Attempting to auto-activate session...")
-                    try:
-                        acc_path = os.path.join(BASE_DIR, "meesho_account_7845427202.json")
-                        if os.path.exists(acc_path):
-                            with open(acc_path) as f_acc:
-                                requests.post(f"{WEBAPP_BASE_URL}/api/import", headers=get_webapp_headers(), json=json.load(f_acc), timeout=10)
-                    except Exception as e_imp:
-                        log(f"[!] Failed to auto-import session: {e_imp}")
-                    time.sleep(1)
-                    continue
+    try:
+        r = requests.post(url, headers=get_webapp_headers(), json={"number": phone_10}, timeout=12)
+        if r.status_code == 200:
+            data = r.json()
+            if not data.get("ok"):
+                err = data.get("error", "")
+                log(f"[!] Mini App /api/check reported: '{err}'")
+                return None
 
-                results = data.get("results", [])
-                if results:
-                    res = results[0]
-                    is_registered = res.get("registered", False)
-                    is_fresh = res.get("fresh", not is_registered)
-                    
-                    if is_registered is True or is_fresh is False:
-                        log(f"[!] Number +91 {phone_10} is REGISTERED on Meesho (registered={is_registered}, fresh={is_fresh}). REJECTED!")
-                        return False
-                    else:
-                        log(f"[+] Number +91 {phone_10} is VERIFIED FRESH on Meesho! Accepted.")
-                        return True
-        except Exception as e:
-            log(f"[!] Warning: /api/check error (attempt {attempt+1}): {e}")
-            time.sleep(1)
+            results = data.get("results", [])
+            if results:
+                res = results[0]
+                is_registered = res.get("registered", False)
+                is_fresh = res.get("fresh", not is_registered)
+                
+                if is_registered is True or is_fresh is False:
+                    log(f"[!] Mini App /api/check: +91 {phone_10} is REGISTERED on Meesho. REJECTED!")
+                    return False
+                else:
+                    log(f"[+] Mini App /api/check: +91 {phone_10} is VERIFIED FRESH on Meesho! Accepted.")
+                    return True
+        else:
+            log(f"[!] Mini App /api/check returned HTTP status {r.status_code}")
+            return None
+    except Exception as e:
+        log(f"[!] Mini App /api/check connection error: {e}")
+        return None
+        
+    return None
+
+async def check_number_via_telegram_bot(client, phone_10, timeout=12):
+    """
+    Fallback checker using @manishmeeshobot via Telethon.
+    Taps '🔍 Check Number', sends phone number, and parses reply:
+      - 'NOT REGISTERED (NEW USER)' -> True (Fresh)
+      - 'REGISTERED' -> False (Already used)
+      - Timeout/Error -> False (Safety default)
+    """
+    bot_username = "manishmeeshobot"
+    try:
+        log(f"[*] Fallback checking +91 {phone_10} via @{bot_username}...")
+        bot = await client.get_entity(bot_username)
+        
+        # 1. Click "Check Number" button
+        msgs = await client.get_messages(bot, limit=4)
+        check_btn = None
+        for m in msgs:
+            if m.buttons:
+                for row in m.buttons:
+                    for b in row:
+                        if "check number" in (b.text or "").lower():
+                            check_btn = b
+                            break
+                    if check_btn:
+                        break
+                        
+        if check_btn:
+            await check_btn.click()
+            await asyncio.sleep(1)
+        else:
+            await client.send_message(bot, "/start")
+            await asyncio.sleep(1.5)
+            msgs = await client.get_messages(bot, limit=3)
+            for m in msgs:
+                if m.buttons:
+                    for row in m.buttons:
+                        for b in row:
+                            if "check number" in (b.text or "").lower():
+                                await b.click()
+                                break
+            await asyncio.sleep(1)
+
+        # 2. Send 10-digit number
+        clean_num = str(phone_10).strip()
+        if clean_num.startswith("+91"):
+            clean_num = clean_num[3:]
+        elif clean_num.startswith("91") and len(clean_num) == 12:
+            clean_num = clean_num[2:]
             
-    # SAFETY: If freshness cannot be verified, DO NOT BUY / SUBMIT!
-    log(f"[!] SAFETY: Could not verify freshness for +91 {phone_10}. Marking as UNVERIFIED (Skipping to prevent money loss).")
-    return False
+        send_msg = await client.send_message(bot, clean_num)
+        
+        # 3. Wait for response
+        start_t = time.time()
+        while (time.time() - start_t) < timeout and not stop_event.is_set():
+            await asyncio.sleep(1)
+            replies = await client.get_messages(bot, limit=4)
+            for r in replies:
+                if r.id > send_msg.id and r.sender_id == bot.id:
+                    t = (r.text or "").lower()
+                    if "checking" in t:
+                        continue
+                    if "not registered" in t or "new user" in t or "naya hai" in t:
+                        log(f"[+] @{bot_username} reports: +91 {clean_num} is UNREGISTERED (Fresh)!")
+                        return True
+                    if "already registered" in t or "registered" in t:
+                        log(f"[!] @{bot_username} reports: +91 {clean_num} is REGISTERED on Meesho. REJECTED!")
+                        return False
+
+        log(f"[!] @{bot_username} response timed out for +91 {clean_num}.")
+        return False
+    except Exception as e:
+        log(f"[!] Error checking via @{bot_username}: {e}")
+        return False
 
 def import_account_to_order_bot(account_json):
     phone = account_json.get("mobile") or account_json.get("phone", "")
@@ -403,11 +470,11 @@ async def extract_account_json_from_messages(client, bot_entity):
 
 # ==================== Fresh SIM Acquisition ====================
 
-async def acquire_fresh_number(provider_name, active_servers, service_idx_ref):
+async def acquire_fresh_number(client, provider_name, active_servers, service_idx_ref):
     """
     Cycles through active servers, buys a SIM number, and verifies freshness
-    via Mini App /api/check.
-    If ALREADY REGISTERED -> immediately queues for auto-refund and retries next server.
+    via Mini App /api/check (Primary) and @manishmeeshobot (Automatic Fallback).
+    If ALREADY REGISTERED or unverified -> immediately queues for auto-refund and retries next server.
     If FRESH -> returns dict with act_id, phone_10, display_srv, t_bought.
     """
     p_lower = provider_name.lower().strip()
@@ -447,12 +514,17 @@ async def acquire_fresh_number(provider_name, active_servers, service_idx_ref):
         track_activation(act_id, phone_10, display_srv, provider_name)
         log(f"[+] Purchased Number: +91 {phone_10} (ID: {act_id}) on {display_srv}")
 
-        # Check freshness via Mini App API
+        # 1. Primary Check: Mini App /api/check
         log(f"[*] Checking freshness of +91 {phone_10} via Mini App /api/check...")
         is_fresh = check_number_is_fresh(phone_10)
 
+        # 2. Fallback Check: If Mini App was unavailable or errored out, fallback to @manishmeeshobot
+        if is_fresh is None:
+            log(f"[!] Mini App API unavailable or session error! Automatically falling back to @manishmeeshobot...")
+            is_fresh = await check_number_via_telegram_bot(client, phone_10)
+
         if not is_fresh:
-            log(f"[!] Number +91 {phone_10} is ALREADY REGISTERED! Discarding & auto-refunding.")
+            log(f"[!] Number +91 {phone_10} is REGISTERED or could not be verified! Discarding & auto-refunding.")
             queue_for_refund(provider_name, act_id, phone_10, t_bought)
             await asyncio.sleep(1)
             continue
@@ -579,7 +651,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
                 else:
                     log("[*] Target offer is locked! Acquiring fresh number from active servers...")
                     save_state("running", f"Finding fresh number for Account #{current_acc_num}...", target_count, completed_count, provider_name, servers_filter)
-                    active_sim = await acquire_fresh_number(provider_name, active_servers, service_idx_ref)
+                    active_sim = await acquire_fresh_number(client, provider_name, active_servers, service_idx_ref)
                     if not active_sim:
                         continue
 
@@ -613,7 +685,7 @@ async def run_telegram_hunter(target_count=1, provider_name="otpdoctor", servers
                 prefetch_task = None
                 if standby_sim is None:
                     log(f"[*] [Optimal Flow] Pre-fetching next fresh number in background while waiting for OTP...")
-                    prefetch_task = asyncio.create_task(acquire_fresh_number(provider_name, active_servers, service_idx_ref))
+                    prefetch_task = asyncio.create_task(acquire_fresh_number(client, provider_name, active_servers, service_idx_ref))
 
                 # Step 6: Poll SMS Provider for OTP (3-Minute / 180s Timeout)
                 log(f"[+] Phone accepted! Polling {provider_name.upper()} for OTP SMS on +91 {phone_10} (Timeout: 180s / 3 min)...")
