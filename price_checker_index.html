@@ -2,1162 +2,183 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>Meesho Hub | Online Shopping & Live Deals</title>
-    
-    <!-- PWA / Android App Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#f43397">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="Meesho">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/shopping-bag.png">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meesho Live Price & Offer Checker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #f8f9fa;
-            color: #212529;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .meesho-pink {
-            color: #f43397;
-        }
-        .bg-meesho-pink {
-            background-color: #f43397;
-        }
-        .border-meesho-pink {
-            border-color: #f43397;
-        }
-        .nav-tab.active {
-            color: #f43397;
-            border-bottom: 2.5px solid #f43397;
-            font-weight: 700;
-        }
-        .filter-pill.active {
-            background-color: #f43397;
-            color: white;
-            border-color: #f43397;
-        }
-        .suggest-item:hover, .suggest-item:active {
-            background-color: #fdf2f8;
-            color: #f43397;
-        }
-        .var-chip.active {
-            border-color: #f43397;
-            background-color: #fdf2f8;
-            color: #f43397;
-            font-weight: 700;
-        }
-        .gallery-thumb.active {
-            border-color: #f43397;
-            box-shadow: 0 0 0 2px #f43397;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #090d16; }
+        .glass-card { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .glow-accent { box-shadow: 0 0 25px rgba(236, 72, 153, 0.2); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#f8f9fa]">
+<body class="text-slate-100 min-h-screen flex flex-col">
 
-    <!-- Top Meesho Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-xs">
-        <div class="max-w-6xl mx-auto px-3.5 py-3">
-            
-            <div class="flex items-center justify-between gap-3">
-                <!-- Meesho Logo -->
-                <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="switchMainTab('search')">
-                    <span class="text-2xl font-black tracking-tight text-[#f43397] flex items-center">
-                        meesho
-                    </span>
-                    <span class="hidden sm:inline-block text-[10px] font-bold uppercase bg-pink-100 text-pink-700 px-2 py-0.5 rounded-full border border-pink-200">
-                        Deals Hub
-                    </span>
+    <!-- Navbar -->
+    <nav class="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-tr from-pink-600 to-rose-500 rounded-xl flex items-center justify-center text-white text-lg shadow-lg">
+                    <i class="fa-solid fa-tags"></i>
                 </div>
-
-                <!-- Center Search Input Form with Suggestions -->
-                <div class="relative flex-1 max-w-xl">
-                    <form onsubmit="handleProductSearch(event)" class="relative flex items-center">
-                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 text-gray-400 text-sm"></i>
-                        <input 
-                            id="search-query-input"
-                            type="text" 
-                            required
-                            autocomplete="off"
-                            oninput="handleInputSuggestions()"
-                            onfocus="handleInputSuggestions()"
-                            onkeydown="handleInputKeydown(event)"
-                            placeholder="Try Saree, Kurti, Shoes, Watch, T-Shirt, or paste link..." 
-                            class="w-full bg-gray-50 border border-gray-300 focus:border-[#f43397] focus:bg-white rounded-lg py-2.5 pl-10 pr-10 text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none transition-all shadow-inner"
-                        />
-                        <button 
-                            type="submit" 
-                            class="absolute right-1 bg-[#f43397] hover:bg-[#d81b7e] text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all cursor-pointer"
-                        >
-                            Search
-                        </button>
-                    </form>
-
-                    <!-- Auto-Suggestions Dropdown -->
-                    <div id="suggestions-box" class="hidden absolute left-0 right-0 top-[110%] bg-white border border-gray-200 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto divide-y divide-gray-100"></div>
-                </div>
-
-                <!-- Right Action Buttons -->
-                <div class="flex items-center gap-2 flex-shrink-0">
-                    <!-- Android Install Button -->
-                    <button type="button" id="btn-install-app" onclick="triggerAppInstall()" class="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#f43397] border border-[#f43397] hover:bg-pink-50 px-3 py-1.5 rounded-lg transition-all cursor-pointer">
-                        <i class="fa-brands fa-android text-sm"></i>
-                        <span>Download App</span>
-                    </button>
+                <div>
+                    <h1 class="text-base font-black tracking-wide text-white flex items-center gap-2">
+                        Meesho Price Checker
+                        <span class="text-[10px] bg-pink-500/20 text-pink-400 font-bold px-2 py-0.5 rounded-full border border-pink-500/30">Live Deals</span>
+                    </h1>
+                    <p class="text-[11px] text-slate-400">Instant Discount & Best Price Calculator</p>
                 </div>
             </div>
 
-            <!-- Categories / Main Nav Tabs (Meesho Style) -->
-            <nav class="flex items-center gap-4 sm:gap-6 mt-3 pt-2 border-t border-gray-100 overflow-x-auto no-scrollbar text-xs">
-                <button type="button" onclick="switchMainTab('search')" id="tab-btn-search" class="nav-tab active py-1.5 flex items-center gap-1.5 text-gray-700 whitespace-nowrap cursor-pointer transition-all">
-                    <i class="fa-solid fa-border-all text-xs"></i>
-                    <span>Product Deals</span>
-                </button>
-                <button type="button" onclick="switchMainTab('price')" id="tab-btn-price" class="nav-tab py-1.5 flex items-center gap-1.5 text-gray-600 hover:text-gray-900 whitespace-nowrap cursor-pointer transition-all">
-                    <i class="fa-solid fa-link text-xs"></i>
-                    <span>Check Specific Link</span>
-                </button>
-                <button type="button" onclick="switchMainTab('orders')" id="tab-btn-orders" class="nav-tab py-1.5 flex items-center gap-1.5 text-gray-600 hover:text-gray-900 whitespace-nowrap cursor-pointer transition-all">
-                    <i class="fa-solid fa-truck text-xs"></i>
-                    <span>Track All Orders</span>
-                    <span id="orders-badge-count" class="text-[10px] bg-pink-100 text-[#f43397] px-1.5 py-0.2 rounded-full font-bold">0</span>
-                </button>
-                <button type="button" onclick="switchMainTab('notice')" id="tab-btn-notice" class="nav-tab py-1.5 flex items-center gap-1.5 text-gray-600 hover:text-gray-900 whitespace-nowrap cursor-pointer transition-all">
-                    <i class="fa-solid fa-bullhorn text-xs text-amber-500"></i>
-                    <span>Notice & Policy</span>
-                    <span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full font-extrabold uppercase">Alert</span>
-                </button>
-            </nav>
-
+            <div class="flex items-center gap-3">
+                <a href="/bill" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3.5 py-1.5 rounded-xl flex items-center gap-2 text-xs transition shadow-lg shadow-emerald-900/30">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                    <span>Bulk WhatsApp Bill</span>
+                </a>
+                <div class="bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center gap-2 text-xs hidden sm:flex">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-slate-300 font-medium">Auto Deal Active</span>
+                </div>
+            </div>
         </div>
-    </header>
-
-    <!-- Popular Category Pills Bar -->
-    <div class="bg-white border-b border-gray-200 py-2.5">
-        <div class="max-w-6xl mx-auto px-3.5 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs">
-            <span class="text-gray-400 font-semibold text-[11px] flex-shrink-0">Popular:</span>
-            <button type="button" onclick="quickSearch('Trending')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">🔥 Trending</button>
-            <button type="button" onclick="quickSearch('Kurti')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">👗 Kurtis</button>
-            <button type="button" onclick="quickSearch('Saree')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">🥻 Sarees</button>
-            <button type="button" onclick="quickSearch('Tshirt')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">👕 T-Shirts</button>
-            <button type="button" onclick="quickSearch('Shoes')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">👟 Shoes</button>
-            <button type="button" onclick="quickSearch('Trimmer')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">⚡ Trimmers</button>
-            <button type="button" onclick="quickSearch('Smart Watch')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">⌚ Smart Watches</button>
-            <button type="button" onclick="quickSearch('Highlighter')" class="px-3 py-1 bg-gray-100 hover:bg-pink-50 hover:text-[#f43397] hover:border-pink-300 text-gray-700 rounded-full border border-gray-200 transition-all whitespace-nowrap cursor-pointer">🖊️ Highlighters</button>
-        </div>
-    </div>
+    </nav>
 
     <!-- Main Container -->
-    <main class="flex-1 max-w-6xl w-full mx-auto px-3.5 py-4 space-y-6">
-
-                <!-- ==================== LIVE ₹120 OFF FIRST-ORDER OFFER BANNER ==================== -->
-        <div id="live-offer-banner-120" class="relative overflow-hidden bg-gradient-to-r from-[#f43397] via-rose-600 to-amber-500 text-white rounded-2xl p-4 sm:p-5 shadow-md shadow-pink-500/15 animate-in fade-in duration-300">
-            <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4">
-                <div class="space-y-1.5">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="bg-yellow-400 text-gray-950 text-[10px] sm:text-xs font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-xs">
-                            <i class="fa-solid fa-fire"></i> LIVE DEAL ACTIVE
-                        </span>
-                        <span class="bg-white/20 text-white text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full">
-                            Bucket ₹170 • Final ₹107 • UPI ₹83
-                        </span>
-                    </div>
-                    <h2 class="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center gap-2">
-                        🎉 Upto ₹110 OFF on 1st Order!
-                    </h2>
-                    <p class="text-[11px] sm:text-xs text-pink-100 font-medium max-w-xl">
-                        First-order discount deal active! Order any product below with maximum savings applied automatically via verified accounts.
-                    </p>
-                </div>
-
-                <!-- Right: Notice Button & Quick Action -->
-                <div class="flex items-center gap-2 flex-shrink-0 self-start md:self-auto">
-                    <button type="button" onclick="switchMainTab('notice'); window.scrollTo({top: 0, behavior: 'smooth'});" class="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-1.5 cursor-pointer">
-                        <i class="fa-solid fa-bullhorn text-amber-300 text-xs"></i>
-                        <span>Cancellation Policy</span>
-                        <span class="w-2 h-2 rounded-full bg-rose-300 animate-ping"></span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Subtle decorative glow -->
-            <div class="absolute -right-10 -bottom-10 w-36 h-36 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-        </div>
+    <main class="max-w-5xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
         
-        <!-- ==================== SECTION 1: PRODUCT SEARCH & CATALOG GRID ==================== -->
-        <section id="section-search" class="space-y-4">
-            
-            <!-- Search Results Summary Header -->
-            <div id="search-results-header" class="flex justify-between items-center bg-white border border-gray-200 px-4 py-3 rounded-xl shadow-xs">
-                <div class="flex items-baseline gap-2">
-                    <span class="text-xs text-gray-500">Products for:</span>
-                    <h3 id="search-query-display" class="text-sm font-bold text-gray-900">"Trending"</h3>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span id="search-count-badge" class="text-xs font-semibold bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-md">40 Items</span>
-                </div>
+        <!-- Search Hero Section -->
+        <div class="glass-card rounded-3xl p-6 md:p-8 shadow-2xl text-center space-y-5">
+            <div class="max-w-xl mx-auto space-y-2">
+                <h2 class="text-2xl md:text-3xl font-black text-white">Find Meesho Best Deal Price</h2>
+                <p class="text-xs md:text-sm text-slate-400">Paste any Meesho product link or code below to fetch live product details with best offers applied.</p>
             </div>
 
-            <!-- Search Loading State -->
-            <div id="search-loading" class="hidden p-16 text-center text-xs text-gray-500 flex flex-col items-center justify-center gap-3 bg-white border border-gray-200 rounded-2xl">
-                <i class="fa-solid fa-spinner fa-spin text-3xl text-[#f43397]"></i>
-                <span class="font-bold text-sm text-gray-700">Fetching live products & best deals...</span>
-            </div>
-
-            <!-- Products Grid (Meesho Style: 2 cols on mobile, 4 on desktop) -->
-            <div id="search-products-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4"></div>
-
-            <!-- Load More Container -->
-            <div id="load-more-container" class="hidden text-center pt-2 pb-8">
-                <button 
-                    id="btn-load-more"
-                    type="button" 
-                    onclick="loadMoreProducts()" 
-                    class="bg-white hover:bg-gray-50 active:bg-gray-100 text-[#f43397] border border-[#f43397] font-bold px-8 py-3 rounded-xl shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer text-xs sm:text-sm"
-                >
-                    <i class="fa-solid fa-arrow-down" id="icon-load-more"></i>
-                    <span>Load More Products</span>
-                </button>
-            </div>
-
-            <!-- Empty State -->
-            <div id="search-empty" class="hidden p-12 text-center bg-white border border-gray-200 rounded-2xl text-gray-500 text-xs">
-                <i class="fa-solid fa-bag-shopping text-3xl mb-2 text-gray-300"></i>
-                <p>No products found for this search. Try searching another keyword.</p>
-            </div>
-        </section>
-
-        <!-- ==================== SECTION 2: PASTE SPECIFIC LINK ==================== -->
-        <section id="section-price" class="hidden space-y-5">
-            <div class="bg-white border border-gray-200 rounded-2xl p-5 sm:p-7 shadow-xs space-y-4">
-                <div>
-                    <span class="text-[11px] font-bold uppercase text-[#f43397] bg-pink-50 px-2.5 py-0.5 rounded border border-pink-200">
-                        Link Deal Calculator
-                    </span>
-                    <h2 class="text-xl font-bold text-gray-900 mt-2">Paste Any Meesho Product Link or ID</h2>
-                    <p class="text-xs text-gray-500 mt-1">Paste any product URL, share message, or Product ID from Meesho to calculate customer deal prices with Upto Rs.110 OFF first-order discounts.</p>
-                </div>
-
-                <form onsubmit="handlePriceSearch(event)" class="flex flex-col sm:flex-row gap-2.5">
+            <!-- Input Box -->
+            <form onsubmit="handleSearch(event)" class="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-link"></i>
+                    </div>
                     <input 
-                        id="product-link"
+                        id="product-link" 
                         type="text" 
                         required
-                        autocomplete="off"
-                        placeholder="Paste Meesho link here (e.g. https://www.meesho.com/s/p/... or PID)" 
-                        class="flex-1 bg-gray-50 border border-gray-300 focus:border-[#f43397] focus:bg-white rounded-xl py-3 px-4 text-xs sm:text-sm text-gray-900 placeholder-gray-400 outline-none transition-all shadow-inner"
+                        placeholder="Paste Meesho link (e.g. https://www.meesho.com/s/p/85n11k)..." 
+                        class="w-full pl-11 pr-4 py-4 bg-slate-950/80 border border-slate-700/80 focus:border-pink-500 rounded-2xl text-sm text-white placeholder-slate-500 outline-none transition-all shadow-inner"
                     />
-                    <button 
-                        id="btn-search-price"
-                        type="submit" 
-                        class="bg-[#f43397] hover:bg-[#d81b7e] active:bg-[#c2146e] text-white font-bold px-6 py-3 rounded-xl transition-all cursor-pointer text-xs sm:text-sm flex items-center justify-center gap-1.5"
-                    >
-                        <i class="fa-solid fa-calculator"></i>
-                        <span>Calculate Deal</span>
-                    </button>
-                </form>
-
-                <div id="price-loading-state" class="hidden p-4 bg-pink-50 border border-pink-200 rounded-xl flex items-center gap-2.5 text-[#f43397] text-xs font-semibold">
-                    <i class="fa-solid fa-spinner fa-spin text-base"></i>
-                    <span>Calculating discounts & live deal prices...</span>
                 </div>
-
-                <div id="price-error-alert" class="hidden p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2.5 text-red-600 text-xs">
-                    <i class="fa-solid fa-circle-exclamation text-base"></i>
-                    <span id="price-error-message">Failed to load product.</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==================== SECTION 3: ALL ORDERS & TRACKING ==================== -->
-        <section id="section-orders" class="hidden space-y-4">
-            <div class="bg-white border border-gray-200 rounded-2xl p-4 sm:p-6 shadow-xs space-y-3.5">
-                <div class="flex justify-between items-center gap-2">
-                    <div>
-                        <h2 class="text-base font-bold text-gray-900 flex items-center gap-2">
-                            <i class="fa-solid fa-boxes-stacked text-[#f43397]"></i>
-                            <span>All Account Orders</span>
-                            <span id="all-orders-count" class="text-xs font-bold bg-pink-100 text-[#f43397] px-2 py-0.5 rounded-full">0 Orders</span>
-                        </h2>
-                    </div>
-                    <button type="button" onclick="loadAllOrders(true)" id="btn-refresh-orders" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
-                        <i class="fa-solid fa-rotate text-[#f43397]" id="icon-refresh"></i>
-                        <span>Refresh</span>
-                    </button>
-                </div>
-
-                <div class="flex flex-col gap-2.5">
-                    <div class="relative">
-                        <i class="fa-solid fa-mobile-screen-button absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
-                        <input 
-                            id="search-orders" 
-                            type="text" 
-                            oninput="filterOrders()"
-                            placeholder="🔍 Search by Delivery Mobile (e.g. 9876543210), Recipient Name, or Order ID..." 
-                            class="w-full bg-gray-50 border border-gray-300 focus:border-[#f43397] focus:bg-white rounded-xl py-2.5 pl-9 pr-3 text-xs text-gray-900 placeholder-gray-400 outline-none transition-all shadow-inner"
-                        />
-                    </div>
-
-                    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                        <button type="button" onclick="setStatusFilter('ALL', this)" class="filter-pill active px-3 py-1 bg-gray-100 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 flex-shrink-0">All</button>
-                        <button type="button" onclick="setStatusFilter('Delivered', this)" class="filter-pill px-3 py-1 bg-gray-100 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 flex-shrink-0">Delivered</button>
-                        <button type="button" onclick="setStatusFilter('Shipped', this)" class="filter-pill px-3 py-1 bg-gray-100 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 flex-shrink-0">Shipped</button>
-                        <button type="button" onclick="setStatusFilter('Ordered', this)" class="filter-pill px-3 py-1 bg-gray-100 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 flex-shrink-0">Ordered</button>
-                        <button type="button" onclick="setStatusFilter('Cancelled', this)" class="filter-pill px-3 py-1 bg-gray-100 border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 flex-shrink-0">Cancelled</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="orders-loading" class="p-10 text-center text-gray-500 text-xs flex flex-col items-center justify-center gap-2 bg-white border border-gray-200 rounded-2xl">
-                <i class="fa-solid fa-spinner fa-spin text-2xl text-[#f43397]"></i>
-                <span>Fetching orders & live tracking...</span>
-            </div>
-
-            <div id="orders-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-
-            <div id="orders-empty" class="hidden p-10 text-center bg-white border border-gray-200 rounded-2xl text-gray-500 text-xs">
-                <p>No orders found matching your search.</p>
-            </div>
-        </section>
-        <!-- ==================== SECTION 4: OFFICIAL NOTICE & CANCELLATION POLICY ==================== -->
-        <section id="section-notice" class="hidden space-y-4">
-            <div class="bg-white border border-gray-200 px-4 py-3 rounded-xl shadow-xs flex items-center justify-between">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold flex-shrink-0">
-                        <i class="fa-solid fa-bullhorn"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xs sm:text-sm font-bold text-gray-900">Official Notices & Cancellation Policy</h3>
-                        <p class="text-[10px] sm:text-[11px] text-gray-500">Read details on Meesho dispatch status, auto-cancellations, and refund procedures</p>
-                    </div>
-                </div>
-                <button type="button" onclick="switchMainTab('search')" class="text-xs font-bold text-[#f43397] hover:underline flex items-center gap-1 cursor-pointer flex-shrink-0">
-                    <i class="fa-solid fa-arrow-left"></i>
-                    <span>Back to Deals</span>
+                <button 
+                    type="submit" 
+                    id="btn-search" 
+                    class="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-bold py-4 px-8 rounded-2xl shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <span>Check Price</span>
                 </button>
-            </div>
-
-            <div id="urgent-announcement-banner" class="relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-rose-500/10 to-pink-500/10 border-2 border-amber-300 sm:border-amber-400/80 rounded-2xl p-4 sm:p-6 shadow-md shadow-amber-500/5 animate-in fade-in duration-300">
-            
-            <!-- Top Alert Badge, Header & Language Switcher -->
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-amber-200/80 pb-3.5">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center text-base flex-shrink-0 shadow-sm shadow-amber-300 animate-pulse">
-                        <i class="fa-solid fa-bullhorn"></i>
-                    </div>
-                    <div>
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span id="notice-title" class="text-xs sm:text-sm font-black text-amber-950 uppercase tracking-wide flex items-center gap-1.5">
-                                Meesho Order & Delivery Status Update
-                            </span>
-                            <span id="notice-badge" class="bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider animate-bounce">
-                                Important Notice
-                            </span>
-                        </div>
-                        <p id="notice-subtitle" class="text-[11px] sm:text-xs text-amber-900/80 font-medium mt-0.5">Please read regarding recent Meesho automated cancellations & refund policy.</p>
-                    </div>
-                </div>
-
-                <!-- Right Action: Language Switcher & Track Button -->
-                <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between sm:justify-end">
-                    
-                    <!-- Language Selector Pills -->
-                    <div class="inline-flex bg-white/90 border border-amber-300 rounded-xl p-0.5 shadow-2xs text-xs font-bold">
-                        <button type="button" id="lang-btn-en" onclick="setNoticeLanguage('en')" class="px-2.5 py-1 rounded-lg transition-all bg-[#f43397] text-white shadow-xs cursor-pointer">
-                            English
-                        </button>
-                        <button type="button" id="lang-btn-hi" onclick="setNoticeLanguage('hi')" class="px-2.5 py-1 rounded-lg transition-all text-gray-700 hover:text-[#f43397] cursor-pointer">
-                            हिंदी
-                        </button>
-                        <button type="button" id="lang-btn-or" onclick="setNoticeLanguage('or')" class="px-2.5 py-1 rounded-lg transition-all text-gray-700 hover:text-[#f43397] cursor-pointer">
-                            ଓଡ଼ିଆ
-                        </button>
-                    </div>
-
-                    <!-- 1-Click Track Button -->
-                    <button type="button" onclick="switchMainTab('orders'); window.scrollTo({top: 100, behavior: 'smooth'});" class="bg-gradient-to-r from-[#f43397] to-rose-600 hover:from-[#d81b7e] hover:to-rose-700 text-white px-3.5 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 flex-shrink-0 cursor-pointer active:scale-95">
-                        <i class="fa-solid fa-truck-fast text-[11px]"></i>
-                        <span id="notice-track-btn-text">Track Orders</span>
-                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Key Announcement Cards Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4 text-xs">
-                
-                <!-- Card 1: Delivery Status & Meesho Cancellation Context -->
-                <div class="bg-white/90 backdrop-blur-xs border border-amber-200 rounded-xl p-3.5 sm:p-4 space-y-2 shadow-2xs">
-                    <div class="flex items-start gap-2.5">
-                        <div class="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs flex-shrink-0 mt-0.5 font-bold">
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                        <div class="space-y-1">
-                            <h4 id="notice-card1-title" class="font-black text-gray-900 text-xs sm:text-sm">100% Delivery Goal & Cancellation Alert</h4>
-                            <p id="notice-card1-desc" class="text-gray-700 leading-relaxed text-[11px] sm:text-xs">
-                                We always strive for <strong>100% guaranteed delivery</strong> of every order. However, Meesho backend is currently auto-cancelling several freshly placed orders before dispatch.
-                            </p>
-                        </div>
-                    </div>
-                    
-                    <div id="notice-card1-shipped" class="bg-emerald-50/80 border border-emerald-200 p-2.5 rounded-lg text-[11px] text-emerald-900 font-medium">
-                        <i class="fa-solid fa-truck-ramp-box text-emerald-600 mr-1"></i>
-                        <strong>If your product has been SHIPPED:</strong> It will <strong>definitely be delivered</strong> to your doorstep with full tracking.
-                    </div>
-                </div>
-
-                <!-- Card 2: Ordered Status & WhatsApp Refund Policy -->
-                <div class="bg-white/90 backdrop-blur-xs border border-amber-200 rounded-xl p-3.5 sm:p-4 space-y-2 shadow-2xs">
-                    <div class="flex items-start gap-2.5">
-                        <div class="w-6 h-6 rounded-lg bg-rose-100 text-rose-700 flex items-center justify-center text-xs flex-shrink-0 mt-0.5 font-bold">
-                            <i class="fa-solid fa-clock-rotate-left"></i>
-                        </div>
-                        <div class="space-y-1">
-                            <h4 id="notice-card2-title" class="font-black text-gray-900 text-xs sm:text-sm">Un-Shipped Orders & Guaranteed Refunds</h4>
-                            <p id="notice-card2-desc" class="text-gray-700 leading-relaxed text-[11px] sm:text-xs">
-                                <strong>If your order is in "ORDERED" status (not yet shipped):</strong> Please wait for further tracking updates. You can monitor live status under the <strong>Track All Orders</strong> tab.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div id="notice-card2-refund" class="bg-pink-50/80 border border-pink-200 p-2.5 rounded-lg text-[11px] text-pink-950 font-medium">
-                        <i class="fa-brands fa-whatsapp text-emerald-600 text-xs mr-1"></i>
-                        <strong>Refund Process:</strong> If your order gets cancelled by Meesho, your refund will be promptly sent to your <strong>WhatsApp</strong> (with deduction of number & server cost per T&C).
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Bottom Thank You & Next Offer Note -->
-            <div class="mt-3.5 pt-3 border-t border-amber-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] sm:text-xs text-amber-950/90 font-medium">
-                <div class="flex items-center gap-1.5">
-                    <i class="fa-solid fa-heart text-[#f43397]"></i>
-                    <span id="notice-footer-text">Thank you for shopping with us! Please stay tuned as we prepare the next big discount offers.</span>
-                </div>
-                <div id="notice-footer-support" class="text-[10px] sm:text-[11px] text-gray-500 font-mono">
-                    Updated: Today &bull; Meesho Hub Support
-                </div>
-            </div>
-
+            </form>
         </div>
-        </section>
 
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden py-12 text-center space-y-4">
+            <div class="inline-block w-12 h-12 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin"></div>
+            <p class="text-sm font-semibold text-slate-300">Fetching live details from Meesho...</p>
+        </div>
+
+        <!-- Error Alert -->
+        <div id="error-alert" class="hidden bg-rose-950/50 border border-rose-800 text-rose-300 p-4 rounded-2xl text-xs flex items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation text-base text-rose-400"></i>
+            <span id="error-message">Failed to fetch product details.</span>
+        </div>
+
+        <!-- Product Details Result Card -->
+        <div id="result-card" class="hidden glass-card rounded-3xl p-6 md:p-8 shadow-2xl space-y-8">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+                
+                <!-- Left: Product Images Gallery -->
+                <div class="md:col-span-5 space-y-4">
+                    <div class="aspect-square bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 flex items-center justify-center p-2">
+                        <img id="main-product-img" src="" alt="Product" class="w-full h-full object-contain rounded-xl" />
+                    </div>
+                    <!-- Thumbnails -->
+                    <div id="img-thumbnails" class="flex gap-2 overflow-x-auto pb-2"></div>
+                </div>
+
+                <!-- Right: Product Information & Calculated Prices -->
+                <div class="md:col-span-7 space-y-6">
+                    
+                    <!-- Title & Supplier -->
+                    <div>
+                        <span id="prod-supplier" class="text-[11px] font-bold text-pink-400 uppercase tracking-wider bg-pink-950/40 px-2.5 py-1 rounded-lg border border-pink-800/40">Verified Seller</span>
+                        <h3 id="prod-title" class="text-lg md:text-xl font-bold text-white mt-2.5 leading-snug">Product Title Here</h3>
+                    </div>
+
+                    <!-- Highlighted Price Box -->
+                    <div class="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-5 rounded-2xl space-y-4">
+                        <div class="flex flex-wrap items-baseline gap-3">
+                            <span class="text-xs text-slate-400 font-semibold uppercase">Your Deal Price:</span>
+                            <span id="price-upi" class="text-3xl md:text-4xl font-black text-emerald-400">₹0</span>
+                            <span class="text-xs text-slate-500 font-bold line-through ml-2" id="price-mrp">MRP ₹0</span>
+                            <span id="discount-badge" class="text-xs font-bold bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-800">Special Offer</span>
+                        </div>
+
+                        <!-- COD vs UPI Comparison -->
+                        <div class="grid grid-cols-2 gap-3 pt-2 border-t border-slate-800/80 text-xs">
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                <div class="text-[10px] text-slate-400 font-semibold uppercase">UPI Special (Prepaid)</div>
+                                <div id="calc-upi" class="text-base font-black text-emerald-400 mt-0.5">₹0</div>
+                                <div class="text-[10px] text-slate-400 mt-1">Best discount applied</div>
+                            </div>
+                            <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+                                <div class="text-[10px] text-slate-400 font-semibold uppercase">Cash on Delivery (COD)</div>
+                                <div id="calc-cod" class="text-base font-black text-slate-300 mt-0.5">₹0</div>
+                                <div class="text-[10px] text-slate-400 mt-1">Pay on delivery</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Variations / Sizes Available -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Available Sizes & Variations</h4>
+                        <div id="variations-container" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Promos Applied -->
+                    <div id="promos-container" class="space-y-2">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Discounts Applied</h4>
+                        <div id="promos-list" class="space-y-1.5"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
-    <!-- ==================== OFFICIAL MEESHO STYLE PRODUCT DETAIL MODAL ==================== -->
-    <div id="product-detail-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-white border-t sm:border border-gray-200 rounded-t-2xl sm:rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col animate-in fade-in duration-200">
-            
-            <!-- Modal Top Header Bar -->
-            <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10 flex-shrink-0">
-                <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Product Offer Details</span>
-                <button type="button" onclick="closeProductModal()" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-all cursor-pointer">
-                    <i class="fa-solid fa-xmark text-xs"></i>
-                </button>
-            </div>
-
-            <!-- Modal Loading -->
-            <div id="prod-modal-loading" class="p-16 text-center text-xs text-gray-500 flex flex-col items-center justify-center gap-3">
-                <i class="fa-solid fa-spinner fa-spin text-3xl text-[#f43397]"></i>
-                <span class="font-bold text-sm text-gray-700">Loading product images & deal pricing...</span>
-            </div>
-
-            <!-- Modal Content Body -->
-            <div id="prod-modal-body" class="hidden p-4 sm:p-6 space-y-5 overflow-y-auto flex-1">
-                
-                <!-- Section A: Product Images & Purchase Box -->
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-                    
-                    <!-- Left: Large High-Res Image Showcase & Thumbnails -->
-                    <div class="md:col-span-6 space-y-3">
-                        <div class="w-full aspect-square max-h-96 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden relative flex items-center justify-center select-none touch-pan-y group" id="product-image-container">
-                            <!-- Prev Arrow Button -->
-                            <button type="button" id="slider-prev-btn" onclick="slideModalImage(-1)" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-md flex items-center justify-center z-20 cursor-pointer transition-all active:scale-90 border border-gray-200" title="Previous Image">
-                                <i class="fa-solid fa-chevron-left text-xs"></i>
-                            </button>
-
-                            <img id="modal-p-img" src="" alt="Product" class="w-full h-full object-contain p-2 transition-all duration-200 cursor-grab active:cursor-grabbing" />
-
-                            <!-- Next Arrow Button -->
-                            <button type="button" id="slider-next-btn" onclick="slideModalImage(1)" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white/90 hover:bg-white text-gray-800 shadow-md flex items-center justify-center z-20 cursor-pointer transition-all active:scale-90 border border-gray-200" title="Next Image">
-                                <i class="fa-solid fa-chevron-right text-xs"></i>
-                            </button>
-
-                            <div class="absolute bottom-2.5 right-2.5 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-md z-20" id="gallery-counter">
-                                📷 1 of 1
-                            </div>
-                        </div>
-                        <div id="modal-gallery-thumbs" class="flex gap-2 overflow-x-auto pb-1 no-scrollbar"></div>
-                    </div>
-
-                    <!-- Right: Product Name, Price, Sizes & Supplier -->
-                    <div class="md:col-span-6 space-y-4">
-                        <div>
-                            <span id="modal-p-supplier" class="text-[11px] font-bold text-gray-500 uppercase bg-gray-100 px-2.5 py-1 rounded">Supplier Name</span>
-                            <h3 id="modal-p-name" class="text-base sm:text-lg font-bold text-gray-900 mt-2 leading-snug">Product Name</h3>
-                            
-                            <div class="flex items-center gap-2 mt-2">
-                                <span class="bg-green-100 text-[#038d63] text-xs font-bold px-2.5 py-0.5 rounded-md flex items-center gap-1">
-                                    <i class="fa-solid fa-truck text-[10px]"></i>
-                                    <span>Free Delivery</span>
-                                </span>
-                                <span class="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-0.5 rounded-md">
-                                    Cash on Delivery Available
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Price Card (Meesho Style) -->
-                        <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-3">
-                            <div class="flex items-baseline gap-2">
-                                <span class="text-3xl font-black text-gray-900" id="modal-p-upi">₹0</span>
-                                <span class="text-xs text-gray-400 line-through" id="modal-p-mrp">MRP ₹0</span>
-                                <span id="modal-p-discount" class="text-xs font-bold text-[#038d63] bg-green-100 px-2 py-0.5 rounded-md">Special Offer</span>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2 text-xs">
-                                <div class="bg-white p-3 rounded-lg border border-gray-200">
-                                    <div class="text-[10px] text-gray-500 font-bold uppercase">UPI Special (Prepaid)</div>
-                                    <div id="modal-p-card-upi" class="text-base font-bold text-[#038d63] mt-0.5">₹0</div>
-                                </div>
-                                <div class="bg-white p-3 rounded-lg border border-gray-200">
-                                    <div class="text-[10px] text-gray-500 font-bold uppercase">Cash on Delivery</div>
-                                    <div id="modal-p-card-cod" class="text-base font-bold text-gray-800 mt-0.5">₹0</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Select Size Chips (Meesho Style) -->
-                        <div class="space-y-2">
-                            <div class="flex justify-between items-center">
-                                <h4 class="text-xs font-bold text-gray-700 uppercase">Select Size</h4>
-                                <span class="text-xs text-[#f43397] font-semibold" id="selected-size-label">Size: Free Size</span>
-                            </div>
-                            <div id="modal-p-variations" class="flex flex-wrap gap-2"></div>
-                        </div>
-
-                        <!-- 1-Click Copy Meesho Link Button -->
-                        <div class="flex justify-between items-center pt-2">
-                            <span class="text-xs font-mono text-gray-400" id="modal-p-id">PID: -</span>
-                            <button type="button" onclick="copyProductLink(this)" class="bg-gray-800 hover:bg-black text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs">
-                                <i class="fa-regular fa-copy"></i>
-                                <span>Copy Meesho Link</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Section B: Direct Forwarding to Meesho for Real Reviews & Ratings -->
-                <div class="bg-gradient-to-r from-pink-50 to-rose-50 border border-pink-200 p-4 sm:p-5 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mt-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[#f43397] text-white flex items-center justify-center text-base flex-shrink-0 shadow-sm shadow-pink-300">
-                            <i class="fa-solid fa-star"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-sm font-bold text-gray-900">Want to see real customer reviews & unboxing photos?</h4>
-                            <p class="text-xs text-gray-600 mt-0.5">View 100% genuine customer ratings, verified buyer comments & unboxing images directly on Meesho.</p>
-                        </div>
-                    </div>
-
-                    <a id="modal-meesho-reviews-link" href="#" target="_blank" class="bg-[#f43397] hover:bg-[#d81b7e] active:bg-[#c2146e] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 flex-shrink-0 shadow-sm cursor-pointer whitespace-nowrap">
-                        <span>See Reviews on Meesho</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
-                    </a>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- ==================== ORDER DETAIL & ACCURATE TRACKING MODAL ==================== -->
-    <div id="order-modal" class="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto">
-        <div class="bg-white border-t sm:border border-gray-200 rounded-t-2xl sm:rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[95vh] sm:max-h-[90vh] flex flex-col">
-            
-            <div class="px-4 py-3 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10 flex-shrink-0">
-                <span class="text-xs font-bold text-gray-700 uppercase tracking-wider">Order Tracking & Delivery Address</span>
-                <button type="button" onclick="closeOrderModal()" class="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-all cursor-pointer">
-                    <i class="fa-solid fa-xmark text-xs"></i>
-                </button>
-            </div>
-
-            <div id="modal-loading" class="p-12 text-center text-xs text-gray-500 flex flex-col items-center justify-center gap-2">
-                <i class="fa-solid fa-spinner fa-spin text-2xl text-[#f43397]"></i>
-                <span>Loading live tracking scans & recipient address...</span>
-            </div>
-
-            <div id="modal-body" class="hidden p-4 sm:p-6 space-y-4 overflow-y-auto flex-1">
-                <div class="bg-gray-50 border border-gray-200 p-3.5 rounded-xl flex items-start gap-3">
-                    <img id="modal-product-img" src="" alt="Product" class="w-16 h-16 rounded-lg object-cover bg-white border border-gray-200 flex-shrink-0" />
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-start gap-1.5">
-                            <h4 id="modal-product-name" class="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">Product Name</h4>
-                            <span id="modal-status-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full">Delivered</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-xs text-gray-500 mt-1.5">
-                            <span>Size: <strong id="modal-product-size" class="text-gray-800">Free Size</strong></span>
-                            <span>&bull;</span>
-                            <span>Order Date: <strong id="modal-order-date" class="text-gray-800">-</strong></span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="text-xs font-bold text-gray-700 uppercase flex items-center gap-1.5">
-                            <i class="fa-solid fa-location-dot text-[#f43397]"></i>
-                            <span>Delivery Address</span>
-                        </h4>
-                        <button type="button" onclick="copyFullAddress(this)" class="text-xs text-[#f43397] font-bold flex items-center gap-1 cursor-pointer">
-                            <i class="fa-regular fa-copy"></i>
-                            <span>Copy Address</span>
-                        </button>
-                    </div>
-
-                    <div id="modal-address-box" class="text-xs text-gray-700 space-y-0.5 bg-white p-3 rounded-lg border border-gray-200 leading-relaxed">
-                        <div class="font-bold text-gray-900 text-sm" id="addr-name">Name</div>
-                        <div class="text-[#f43397] font-mono text-xs font-bold" id="addr-mobile">Mobile: -</div>
-                        <div class="text-gray-700 pt-0.5" id="addr-lines">Address Line</div>
-                        <div class="text-gray-500 text-xs" id="addr-city-state-pin">City, State - PIN</div>
-                    </div>
-                </div>
-
-                <div id="modal-courier-card" class="bg-gray-50 border border-gray-200 p-3.5 rounded-xl flex justify-between items-center gap-2">
-                    <div>
-                        <span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Courier Logistics</span>
-                        <div class="text-xs font-bold text-gray-900 flex items-center gap-1.5 mt-0.5">
-                            <i class="fa-solid fa-truck text-[#f43397]"></i>
-                            <span id="modal-courier-name">Shadowfax</span>
-                            <span class="font-mono text-gray-500 text-xs" id="modal-courier-awb"></span>
-                        </div>
-                    </div>
-
-                    <a id="modal-tracking-link" href="#" target="_blank" class="bg-[#f43397] hover:bg-[#d81b7e] text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 flex-shrink-0 cursor-pointer">
-                        <span>Live Tracking</span>
-                        <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
-                    </a>
-                </div>
-
-                <!-- Accurate Step Journey Timeline -->
-                <div class="space-y-2">
-                    <h4 class="text-xs font-bold text-gray-700 uppercase flex items-center gap-1.5">
-                        <i class="fa-solid fa-timeline text-[#038d63]"></i>
-                        <span>Order Journey & Live Status</span>
-                    </h4>
-                    <div id="modal-scans-timeline" class="space-y-1 pl-2 border-l-2 border-gray-200 ml-3 relative"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Footer -->
-    <footer class="border-t border-gray-200 bg-white py-4 text-center text-xs text-gray-400">
-        Meesho Hub &bull; Authentic Product Deals & Order Tracking Platform
+    <footer class="border-t border-slate-800/60 py-4 text-center text-xs text-slate-400">
+        Meesho Live Price Checker Engine &bull; Instant Offer Calculator
     </footer>
 
     <script>
-        // PWA Install Prompt handling
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
+        function selectMainImage(src) {
+            document.getElementById('main-product-img').src = src;
+        }
+
+        async function handleSearch(e) {
             e.preventDefault();
-            deferredPrompt = e;
-            const btn = document.getElementById('btn-install-app');
-            if (btn) btn.classList.remove('hidden');
-        });
-
-        function triggerAppInstall() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    deferredPrompt = null;
-                });
-            } else {
-                window.location.href = '/download';
-            }
-        }
-
-        // Register Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js').catch(() => {});
-        }
-
-        // State variables
-        let currentSearchQuery = '';
-        let currentCursor = null;
-        let currentSearchSessionId = null;
-        let isSearching = false;
-        let currentModalProductLink = '';
-        let currentModalProductData = null;
-        let suggestDebounceTimer = null;
-
-        let allOrdersData = [];
-        let currentStatusFilter = 'ALL';
-        let currentActiveModalAddress = '';
-
-        // Tab Switcher
-        function switchMainTab(tab) {
-            document.getElementById('tab-btn-search').classList.toggle('active', tab === 'search');
-            document.getElementById('tab-btn-price').classList.toggle('active', tab === 'price');
-            document.getElementById('tab-btn-orders').classList.toggle('active', tab === 'orders');
-            const noticeBtn = document.getElementById('tab-btn-notice');
-            if (noticeBtn) noticeBtn.classList.toggle('active', tab === 'notice');
-
-            document.getElementById('section-search').classList.toggle('hidden', tab !== 'search');
-            document.getElementById('section-price').classList.toggle('hidden', tab !== 'price');
-            document.getElementById('section-orders').classList.toggle('hidden', tab !== 'orders');
-            const noticeSec = document.getElementById('section-notice');
-            if (noticeSec) noticeSec.classList.toggle('hidden', tab !== 'notice');
-
-            hideSuggestions();
-
-            if (tab === 'orders' && allOrdersData.length === 0) {
-                loadAllOrders();
-            }
-        }
-
-        // ==================== SMART LINK PARSER / EXTRACTOR ====================
-        function extractCleanMeeshoLink(input) {
-            if (!input) return '';
-            input = input.trim();
-            const urlMatch = input.match(/https?:\/\/[^\s]+/i);
-            if (urlMatch) {
-                return urlMatch[0];
-            }
-            if (input.toLowerCase().includes('meesho.com')) {
-                return 'https://' + input.replace(/^https?:\/\//i, '');
-            }
-            if (/^[0-9a-zA-Z]+$/.test(input)) {
-                return `https://www.meesho.com/s/p/${input}`;
-            }
-            return input;
-        }
-
-        // ==================== LIVE AUTO-SUGGESTIONS LOGIC ====================
-        function hideSuggestions() {
-            clearTimeout(suggestDebounceTimer);
-            const box = document.getElementById('suggestions-box');
-            if (box) {
-                box.innerHTML = '';
-                box.classList.add('hidden');
-            }
-        }
-
-        function handleInputSuggestions() {
-            clearTimeout(suggestDebounceTimer);
-            const query = (document.getElementById('search-query-input').value || '').trim();
-            const box = document.getElementById('suggestions-box');
-
-            if (query.length < 2 || query.includes('http') || query.includes('meesho.com')) {
-                hideSuggestions();
-                return;
-            }
-
-            suggestDebounceTimer = setTimeout(async () => {
-                try {
-                    const res = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
-                    const data = await res.json();
-                    
-                    if (data.ok && data.suggestions && data.suggestions.length > 0) {
-                        box.innerHTML = data.suggestions.map(s => `
-                            <div class="suggest-item px-4 py-2.5 flex items-center justify-between text-xs text-gray-700 cursor-pointer transition-all active:bg-pink-50" onclick="selectSuggestion('${s.replace(/'/g, "\\'")}')">
-                                <div class="flex items-center gap-2 truncate">
-                                    <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs"></i>
-                                    <span class="truncate font-medium">${s}</span>
-                                </div>
-                                <i class="fa-solid fa-arrow-up-left text-[10px] text-gray-400"></i>
-                            </div>
-                        `).join('');
-                        box.classList.remove('hidden');
-                    } else {
-                        hideSuggestions();
-                    }
-                } catch(e) {
-                    hideSuggestions();
-                }
-            }, 180);
-        }
-
-        function handleInputKeydown(e) {
-            if (e.key === 'Enter') {
-                hideSuggestions();
-            }
-        }
-
-        function selectSuggestion(text) {
-            document.getElementById('search-query-input').value = text;
-            hideSuggestions();
-            document.getElementById('search-query-input').blur();
-            performSearch(text);
-        }
-
-        document.addEventListener('click', function(e) {
-            const input = document.getElementById('search-query-input');
-            const box = document.getElementById('suggestions-box');
-            if (input && box && e.target !== input && !box.contains(e.target)) {
-                hideSuggestions();
-            }
-        });
-
-        // ==================== LIVE PRODUCT SEARCH LOGIC ====================
-        function quickSearch(tag) {
-            document.getElementById('search-query-input').value = tag;
-            hideSuggestions();
-            performSearch(tag);
-        }
-
-        async function handleProductSearch(e) {
-            if (e) e.preventDefault();
-            hideSuggestions();
-            const input = document.getElementById('search-query-input');
-            if (input) input.blur();
-            const q = (input.value || '').trim();
-            if (!q) return;
-
-            if (q.includes('http') || q.includes('meesho.com') || q.startsWith('s/p/')) {
-                const cleanLink = extractCleanMeeshoLink(q);
-                openProductDetailModal(cleanLink);
-                return;
-            }
-
-            performSearch(q);
-        }
-
-        async function performSearch(query) {
-            hideSuggestions();
-            currentSearchQuery = query;
-            currentCursor = null;
-            currentSearchSessionId = null;
-
-            const loading = document.getElementById('search-loading');
-            const grid = document.getElementById('search-products-grid');
-            const header = document.getElementById('search-results-header');
-            const loadMoreBox = document.getElementById('load-more-container');
-            const empty = document.getElementById('search-empty');
-
-            loading.classList.remove('hidden');
-            grid.innerHTML = '';
-            header.classList.add('hidden');
-            loadMoreBox.classList.add('hidden');
-            empty.classList.add('hidden');
-
-            try {
-                const res = await fetch('/api/search-products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query })
-                });
-
-                const data = await res.json();
-                loading.classList.add('hidden');
-
-                if (!data.ok || !data.items || data.items.length === 0) {
-                    empty.classList.remove('hidden');
-                    return;
-                }
-
-                currentCursor = data.cursor;
-                currentSearchSessionId = data.search_session_id;
-
-                document.getElementById('search-query-display').innerText = `"${query}"`;
-                document.getElementById('search-count-badge').innerText = `${data.items.length} Items`;
-                header.classList.remove('hidden');
-
-                renderProductCards(data.items, false);
-
-                if (data.has_more) {
-                    loadMoreBox.classList.remove('hidden');
-                }
-
-            } catch (err) {
-                loading.classList.add('hidden');
-                empty.classList.remove('hidden');
-            }
-        }
-
-        async function loadMoreProducts() {
-            if (!currentCursor || isSearching) return;
-            isSearching = true;
-
-            const btn = document.getElementById('btn-load-more');
-            const origText = btn.innerHTML;
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
-
-            try {
-                const res = await fetch('/api/search-products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        query: currentSearchQuery,
-                        cursor: currentCursor,
-                        search_session_id: currentSearchSessionId
-                    })
-                });
-
-                const data = await res.json();
-                isSearching = false;
-                btn.disabled = false;
-                btn.innerHTML = origText;
-
-                if (data.ok && data.items && data.items.length > 0) {
-                    currentCursor = data.cursor;
-                    currentSearchSessionId = data.search_session_id;
-
-                    renderProductCards(data.items, true);
-
-                    const totalCards = document.querySelectorAll('#search-products-grid > div').length;
-                    document.getElementById('search-count-badge').innerText = `${totalCards} Items`;
-
-                    if (!data.has_more) {
-                        document.getElementById('load-more-container').classList.add('hidden');
-                    }
-                } else {
-                    document.getElementById('load-more-container').classList.add('hidden');
-                }
-
-            } catch (err) {
-                isSearching = false;
-                btn.disabled = false;
-                btn.innerHTML = origText;
-            }
-        }
-
-        function renderProductCards(items, append = false) {
-            const grid = document.getElementById('search-products-grid');
-            
-            const html = items.map(p => {
-                const img = p.image || 'https://images.meesho.com/images/products/placeholder.jpg';
-                const discount = p.discount_text ? `<span class="bg-green-100 text-[#038d63] text-[10px] font-bold px-1.5 py-0.5 rounded">${p.discount_text}</span>` : '';
-
-                return `
-                    <div class="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl overflow-hidden transition-all flex flex-col justify-between cursor-pointer group" onclick="openProductDetailModal('${p.link}')">
-                        <div class="aspect-square bg-gray-50 relative overflow-hidden flex items-center justify-center">
-                            <img src="${img}" alt="${p.name}" class="w-full h-full object-contain group-hover:scale-105 transition-all duration-300" loading="lazy" />
-                            <div class="absolute top-2 left-2 flex gap-1">
-                                ${discount}
-                            </div>
-                        </div>
-
-                        <div class="p-3 space-y-2 flex-1 flex flex-col justify-between">
-                            <div>
-                                <h4 class="text-xs font-semibold text-gray-800 line-clamp-2 leading-snug group-hover:text-[#f43397] transition-all">
-                                    ${p.name}
-                                </h4>
-                            </div>
-
-                            <div class="space-y-1.5 pt-1">
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-base font-black text-gray-900">₹${p.customer_upi}</span>
-                                    <span class="text-xs text-gray-400 line-through">₹${p.mrp}</span>
-                                </div>
-
-                                <div class="flex items-center justify-between text-[11px]">
-                                    <span class="text-[10px] font-bold text-[#038d63] bg-green-50 px-1.5 py-0.5 rounded">Free Delivery</span>
-                                    <span class="text-[10px] text-gray-400 font-medium">Deal Price</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            if (append) {
-                grid.innerHTML += html;
-            } else {
-                grid.innerHTML = html;
-            }
-        }
-
-        // ==================== PASTE SPECIFIC LINK CHECKER ====================
-        async function handlePriceSearch(e) {
-            if (e) e.preventDefault();
-            const rawInput = (document.getElementById('product-link').value || '').trim();
-            if (!rawInput) return;
-
-            const cleanLink = extractCleanMeeshoLink(rawInput);
-            openProductDetailModal(cleanLink);
-        }
-
-        // ==================== PRODUCT DETAIL MODAL & SLIDER ====================
-        let currentProductImageIndex = 0;
-        let currentProductImages = [];
-        let activeModalId = null;
-
-        // Push state for mobile back button interception
-        function pushModalState(modalId) {
-            activeModalId = modalId;
-            try {
-                window.history.pushState({ modalOpen: true, modalId: modalId }, '');
-            } catch(e) {}
-        }
-
-        // Handle Mobile Hardware / Browser Back Button
-        window.addEventListener('popstate', (e) => {
-            const prodModal = document.getElementById('product-detail-modal');
-            const ordModal = document.getElementById('order-modal');
-
-            if (prodModal && !prodModal.classList.contains('hidden')) {
-                prodModal.classList.add('hidden');
-            }
-            if (ordModal && !ordModal.classList.contains('hidden')) {
-                ordModal.classList.add('hidden');
-            }
-
-            activeModalId = null;
-        });
-
-        function switchModalMainImage(src, idx, total) {
-            currentProductImageIndex = idx;
-            const imgEl = document.getElementById('modal-p-img');
-            if (imgEl) {
-                imgEl.style.opacity = '0.35';
-                imgEl.style.transform = 'scale(0.96)';
-                setTimeout(() => {
-                    imgEl.src = src;
-                    imgEl.style.opacity = '1';
-                    imgEl.style.transform = 'scale(1)';
-                }, 100);
-            }
-            const counter = document.getElementById('gallery-counter');
-            if (counter) counter.innerText = `📷 ${idx + 1} of ${total}`;
-
-            const prevBtn = document.getElementById('slider-prev-btn');
-            const nextBtn = document.getElementById('slider-next-btn');
-            if (prevBtn && nextBtn) {
-                if (total <= 1) {
-                    prevBtn.classList.add('hidden');
-                    nextBtn.classList.add('hidden');
-                } else {
-                    prevBtn.classList.remove('hidden');
-                    nextBtn.classList.remove('hidden');
-                }
-            }
-
-            document.querySelectorAll('.gallery-thumb').forEach((el, i) => {
-                el.classList.toggle('active', i === idx);
-                if (i === idx) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                }
-            });
-        }
-
-        function slideModalImage(direction) {
-            if (!currentProductImages || currentProductImages.length <= 1) return;
-            let nextIndex = currentProductImageIndex + direction;
-            if (nextIndex >= currentProductImages.length) {
-                nextIndex = 0;
-            } else if (nextIndex < 0) {
-                nextIndex = currentProductImages.length - 1;
-            }
-            switchModalMainImage(currentProductImages[nextIndex], nextIndex, currentProductImages.length);
-        }
-
-        function setupImageSliderGestures() {
-            const container = document.getElementById('product-image-container');
-            if (!container || container.dataset.gesturesBound) return;
-            container.dataset.gesturesBound = "true";
-
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let touchEndX = 0;
-            let touchEndY = 0;
-            let isSwiping = false;
-
-            container.addEventListener('touchstart', (e) => {
-                if (!currentProductImages || currentProductImages.length <= 1) return;
-                touchStartX = e.changedTouches[0].clientX;
-                touchStartY = e.changedTouches[0].clientY;
-                isSwiping = true;
-            }, { passive: true });
-
-            container.addEventListener('touchend', (e) => {
-                if (!isSwiping || !currentProductImages || currentProductImages.length <= 1) return;
-                touchEndX = e.changedTouches[0].clientX;
-                touchEndY = e.changedTouches[0].clientY;
-                const diffX = touchEndX - touchStartX;
-                const diffY = touchEndY - touchStartY;
-                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 30) {
-                    if (diffX < 0) {
-                        slideModalImage(1); // Swipe Left -> Next
-                    } else {
-                        slideModalImage(-1); // Swipe Right -> Prev
-                    }
-                }
-                isSwiping = false;
-            }, { passive: true });
-
-            // Mouse Drag for Desktop
-            let mouseStartX = 0;
-            let isMouseDown = false;
-
-            container.addEventListener('mousedown', (e) => {
-                if (!currentProductImages || currentProductImages.length <= 1) return;
-                mouseStartX = e.clientX;
-                isMouseDown = true;
-            });
-
-            container.addEventListener('mouseup', (e) => {
-                if (!isMouseDown) return;
-                const diffX = e.clientX - mouseStartX;
-                if (Math.abs(diffX) > 35) {
-                    if (diffX < 0) {
-                        slideModalImage(1);
-                    } else {
-                        slideModalImage(-1);
-                    }
-                }
-                isMouseDown = false;
-            });
-        }
-
-        function selectModalVariation(idx) {
-            if (!currentModalProductData || !currentModalProductData.variations) return;
-            const vars = currentModalProductData.variations;
-            const v = vars[idx];
-            if (!v) return;
-
-            document.querySelectorAll('.var-chip').forEach((chip, i) => {
-                chip.classList.toggle('active', i === idx);
-            });
-
-            document.getElementById('selected-size-label').innerText = `Size: ${v.name}`;
-            document.getElementById('modal-p-upi').innerText = `₹${v.customer_upi}`;
-            document.getElementById('modal-p-mrp').innerText = v.mrp ? `MRP ₹${v.mrp}` : '';
-            document.getElementById('modal-p-card-upi').innerText = `₹${v.customer_upi}`;
-            document.getElementById('modal-p-card-cod').innerText = `₹${v.customer_cod}`;
-        }
-
-        async function openProductDetailModal(link) {
+            const link = document.getElementById('product-link').value.trim();
             if (!link) return;
-            currentModalProductLink = link;
 
-            hideSuggestions();
-            const modal = document.getElementById('product-detail-modal');
-            const loading = document.getElementById('prod-modal-loading');
-            const body = document.getElementById('prod-modal-body');
+            const loading = document.getElementById('loading-state');
+            const errorAlert = document.getElementById('error-alert');
+            const resultCard = document.getElementById('result-card');
+            const btn = document.getElementById('btn-search');
 
-            modal.classList.remove('hidden');
             loading.classList.remove('hidden');
-            body.classList.add('hidden');
-
-            pushModalState('product-detail-modal');
-            setupImageSliderGestures();
+            errorAlert.classList.add('hidden');
+            resultCard.classList.add('hidden');
+            btn.disabled = true;
 
             try {
                 const res = await fetch('/api/check-price', {
@@ -1168,575 +189,74 @@
 
                 const data = await res.json();
                 loading.classList.add('hidden');
+                btn.disabled = false;
 
-                if (!data.ok || !data.product) {
-                    loading.innerHTML = '<div class="text-red-500 text-xs font-bold">Failed to load product details. Please check the link.</div>';
+                if (!res.ok || !data.ok) {
+                    document.getElementById('error-message').innerText = data.error || 'Failed to fetch product price.';
+                    errorAlert.classList.remove('hidden');
                     return;
                 }
 
                 const p = data.product;
-                currentModalProductData = p;
+                
+                // Populate Data
+                document.getElementById('prod-title').innerText = p.name || 'Meesho Product';
+                document.getElementById('prod-supplier').innerText = p.supplier || 'Verified Supplier';
+                
+                document.getElementById('price-upi').innerText = `₹${p.customer_upi}`;
+                document.getElementById('price-mrp').innerText = p.mrp ? `MRP ₹${p.mrp}` : '';
+                document.getElementById('calc-upi').innerText = `₹${p.customer_upi}`;
+                document.getElementById('calc-cod').innerText = `₹${p.customer_cod}`;
 
-                document.getElementById('modal-p-name').innerText = p.name || 'Meesho Product';
-                document.getElementById('modal-p-supplier').innerText = p.supplier || 'Verified Supplier';
-
-                const images = (p.images && p.images.length > 0) ? p.images : ['https://images.meesho.com/images/products/placeholder.jpg'];
-                currentProductImages = images;
-                currentProductImageIndex = 0;
-
-                switchModalMainImage(images[0], 0, images.length);
-
-                const thumbsDiv = document.getElementById('modal-gallery-thumbs');
-                if (images.length > 1) {
-                    thumbsDiv.innerHTML = images.map((img, i) => `
-                        <img 
-                            src="${img}" 
-                            onclick="switchModalMainImage('${img}', ${i}, ${images.length})" 
-                            class="gallery-thumb ${i === 0 ? 'active' : ''} w-16 h-16 object-contain rounded-xl bg-gray-50 border border-gray-200 cursor-pointer hover:border-[#f43397] transition-all flex-shrink-0 p-1" 
-                        />
-                    `).join('');
-                    thumbsDiv.classList.remove('hidden');
-                } else {
-                    thumbsDiv.innerHTML = '';
-                    thumbsDiv.classList.add('hidden');
+                if (p.fod_text) {
+                    document.getElementById('discount-badge').innerText = p.fod_text;
                 }
 
-                document.getElementById('modal-p-upi').innerText = `₹${p.customer_upi}`;
-                document.getElementById('modal-p-mrp').innerText = p.mrp ? `MRP ₹${p.mrp}` : '';
-                document.getElementById('modal-p-discount').innerText = p.fod_text || 'Special Deal Applied';
+                // Images
+                if (p.images && p.images.length > 0) {
+                    document.getElementById('main-product-img').src = p.images[0];
+                    const thumbDiv = document.getElementById('img-thumbnails');
+                    thumbDiv.innerHTML = p.images.map(img => `
+                        <img src="${img}" onclick="selectMainImage('${img}')" class="w-14 h-14 object-cover rounded-lg border border-slate-700 cursor-pointer hover:border-pink-500 transition-all flex-shrink-0" />
+                    `).join('');
+                }
 
-                document.getElementById('modal-p-card-upi').innerText = `₹${p.customer_upi}`;
-                document.getElementById('modal-p-card-cod').innerText = `₹${p.customer_cod}`;
-                document.getElementById('modal-p-id').innerText = `ID: ${p.id || '-'}`;
-
-                const meeshoUrl = p.link || pidToMeeshoUrl(p.id) || 'https://www.meesho.com';
-                document.getElementById('modal-meesho-reviews-link').href = meeshoUrl;
-
-                const varsDiv = document.getElementById('modal-p-variations');
+                // Variations
+                const varsDiv = document.getElementById('variations-container');
                 if (p.variations && p.variations.length > 0) {
-                    varsDiv.innerHTML = p.variations.map((v, idx) => `
-                        <button 
-                            type="button" 
-                            onclick="selectModalVariation(${idx})" 
-                            class="var-chip ${idx === 0 ? 'active' : ''} px-3.5 py-2 bg-gray-50 border border-gray-200 hover:border-[#f43397] rounded-xl text-xs font-semibold transition-all flex items-center gap-2 cursor-pointer"
-                        >
-                            <span class="text-gray-900">${v.name}</span>
-                            <span class="text-[#038d63] font-bold">₹${v.customer_upi}</span>
-                        </button>
-                    `).join('');
-                    document.getElementById('selected-size-label').innerText = `Size: ${p.variations[0].name}`;
-                } else {
-                    varsDiv.innerHTML = '<span class="text-xs text-gray-500">Standard Free Size</span>';
-                    document.getElementById('selected-size-label').innerText = 'Size: Free Size';
-                }
-
-                body.classList.remove('hidden');
-
-            } catch (err) {
-                loading.innerHTML = '<div class="text-red-500 text-xs font-bold">Error loading product details.</div>';
-            }
-        }
-
-        function closeProductModal() {
-            const modal = document.getElementById('product-detail-modal');
-            if (modal && !modal.classList.contains('hidden')) {
-                modal.classList.add('hidden');
-                if (activeModalId === 'product-detail-modal') {
-                    activeModalId = null;
-                    if (window.history.state && window.history.state.modalOpen) {
-                        window.history.back();
-                    }
-                }
-            }
-        }
-
-        // ==================== UNIVERSAL COPY HELPER ====================
-        function copyToClipboard(text) {
-            if (!text) return false;
-            let success = false;
-            if (navigator.clipboard && window.isSecureContext) {
-                navigator.clipboard.writeText(text).catch(() => {});
-            }
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            textArea.style.position = "fixed";
-            textArea.style.left = "-999999px";
-            textArea.style.top = "-999999px";
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                success = document.execCommand('copy');
-            } catch (err) {}
-            document.body.removeChild(textArea);
-            return success;
-        }
-
-        function pidToMeeshoUrl(pid) {
-            if (!pid) return '';
-            try {
-                let num = BigInt(pid);
-                const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
-                let res = "";
-                while (num > 0n) {
-                    res = chars[Number(num % 36n)] + res;
-                    num = num / 36n;
-                }
-                return `https://www.meesho.com/s/p/${res}`;
-            } catch(e) {
-                return `https://www.meesho.com/s/p/${pid}`;
-            }
-        }
-
-        function copyProductLink(btn) {
-            let linkToCopy = currentModalProductLink;
-            if (currentModalProductData && currentModalProductData.id) {
-                linkToCopy = pidToMeeshoUrl(currentModalProductData.id);
-            }
-            if (!linkToCopy) {
-                linkToCopy = window.location.href;
-            }
-
-            copyToClipboard(linkToCopy);
-            
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check text-white"></i> <span>Copied!</span>';
-            setTimeout(() => { btn.innerHTML = orig; }, 1800);
-        }
-
-        function copyFullAddress(btn) {
-            copyToClipboard(currentActiveModalAddress);
-            const orig = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-check text-[#f43397]"></i> Copied!';
-            setTimeout(() => { btn.innerHTML = orig; }, 1500);
-        }
-
-        // ==================== ALL ORDERS & ACCURATE TRACKING LOGIC ====================
-        async function loadAllOrders(forceRefresh = false) {
-            const loading = document.getElementById('orders-loading');
-            const grid = document.getElementById('orders-grid');
-            const iconRef = document.getElementById('icon-refresh');
-
-            loading.classList.remove('hidden');
-            grid.innerHTML = '';
-            if (forceRefresh) iconRef.classList.add('fa-spin');
-
-            try {
-                const res = await fetch(`/api/orders/all?refresh=${forceRefresh ? 'true' : 'false'}&_t=${Date.now()}`);
-                const data = await res.json();
-                loading.classList.add('hidden');
-                iconRef.classList.remove('fa-spin');
-
-                if (data.ok && data.orders) {
-                    // Filter out products with no tracking / removed
-                    allOrdersData = data.orders.filter(o => {
-                        const sk = (o.stage_key || '').trim().toLowerCase();
-                        const st = (o.status || '').trim().toLowerCase();
-                        return sk !== '' && sk !== 'none' && !st.includes('no tracking') && !st.includes('removed');
-                    });
-                    document.getElementById('all-orders-count').innerText = `${allOrdersData.length} Orders`;
-                    document.getElementById('orders-badge-count').innerText = `${allOrdersData.length}`;
-                    renderOrders(allOrdersData);
-                } else {
-                    grid.innerHTML = '<div class="col-span-2 text-center text-xs text-red-500">Failed to load orders.</div>';
-                }
-            } catch (err) {
-                loading.classList.add('hidden');
-                iconRef.classList.remove('fa-spin');
-                grid.innerHTML = '<div class="col-span-2 text-center text-xs text-red-500">Error fetching orders from server.</div>';
-            }
-        }
-
-        function getStatusBadge(status) {
-            const s = (status || '').toLowerCase();
-            if (s.includes('deliver')) {
-                return `<span class="bg-green-100 text-[#038d63] border border-green-200 px-2.5 py-0.5 rounded-full text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Delivered</span>`;
-            } else if (s.includes('ship') || s.includes('way') || s.includes('transit')) {
-                return `<span class="bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full text-xs font-bold"><i class="fa-solid fa-truck mr-1"></i>${status || 'Shipped'}</span>`;
-            } else if (s.includes('cancel')) {
-                return `<span class="bg-red-100 text-red-700 border border-red-200 px-2.5 py-0.5 rounded-full text-xs font-bold"><i class="fa-solid fa-xmark mr-1"></i>Cancelled</span>`;
-            } else {
-                return `<span class="bg-amber-100 text-amber-800 border border-amber-200 px-2.5 py-0.5 rounded-full text-xs font-bold"><i class="fa-solid fa-clock mr-1"></i>${status || 'Ordered'}</span>`;
-            }
-        }
-
-        function renderOrders(orders) {
-            const grid = document.getElementById('orders-grid');
-            const empty = document.getElementById('orders-empty');
-
-            if (!orders || orders.length === 0) {
-                grid.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-
-            empty.classList.add('hidden');
-            grid.innerHTML = orders.map(o => {
-                const img = o.image || 'https://images.meesho.com/images/products/placeholder.jpg';
-                const deliveryPhone = o.delivery_mobile ? o.delivery_mobile : (o.phone ? o.phone.replace('+91', '') : '');
-                const recipientName = o.delivery_name ? `<span class="text-gray-900 font-bold">${o.delivery_name}</span> &bull; ` : '';
-                const locationTag = o.city ? `<span class="text-gray-500 text-xs">(${o.city})</span>` : '';
-
-                return `
-                    <div class="bg-white border border-gray-200 p-4 rounded-xl shadow-xs transition-all flex gap-3.5 items-start">
-                        <img src="${img}" alt="Product" class="w-20 h-20 rounded-lg object-cover bg-gray-50 border border-gray-200 flex-shrink-0" />
-                        <div class="flex-1 min-w-0 flex flex-col justify-between h-full space-y-2">
-                            <div>
-                                <h4 class="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">${o.product || 'Meesho Product'}</h4>
-
-                                <div class="bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg mt-2 flex items-center justify-between text-xs">
-                                    <div class="flex items-center gap-1 text-gray-700 truncate">
-                                        <i class="fa-solid fa-location-dot text-[#f43397]"></i>
-                                        <span class="truncate">${recipientName}<span class="font-mono text-[#f43397] font-bold">${deliveryPhone}</span> ${locationTag}</span>
-                                    </div>
-                                    <button type="button" onclick="navigator.clipboard.writeText('${deliveryPhone}'); alert('Copied: ${deliveryPhone}');" class="text-gray-400 hover:text-[#f43397] ml-1 flex-shrink-0 cursor-pointer" title="Copy Mobile">
-                                        <i class="fa-regular fa-copy"></i>
-                                    </button>
-                                </div>
-
-                                <div class="flex items-center gap-2 mt-2">
-                                    ${getStatusBadge(o.status)}
-                                    <span class="text-xs font-mono text-gray-400">Acc: ${o.phone || ''}</span>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between items-center pt-2.5 border-t border-gray-100">
-                                <div class="text-[11px] font-mono text-gray-500">
-                                    ID: <span class="text-gray-800 font-bold">${o.order_num}</span>
-                                </div>
-                                <button type="button" onclick="openOrderModal('${o.order_num}')" class="bg-pink-50 hover:bg-pink-100 text-[#f43397] border border-pink-200 px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
-                                    <span>Track</span>
-                                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                                </button>
-                            </div>
+                    varsDiv.innerHTML = p.variations.map(v => `
+                        <div class="px-3 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs flex items-center gap-2">
+                            <span class="font-bold text-white">${v.name}</span>
+                            <span class="text-emerald-400 font-bold">₹${v.customer_upi}</span>
                         </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function setStatusFilter(status, btn) {
-            currentStatusFilter = status;
-            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-            btn.classList.add('active');
-            filterOrders();
-        }
-
-        function filterOrders() {
-            const rawQuery = (document.getElementById('search-orders').value || '').toLowerCase().trim();
-            const cleanQuery = rawQuery.replace(/[\s\-\+]/g, '');
-            
-            let filtered = allOrdersData.filter(o => {
-                const matchesStatus = currentStatusFilter === 'ALL' || (o.status || '').toLowerCase().includes(currentStatusFilter.toLowerCase());
-                
-                if (!rawQuery) return matchesStatus;
-
-                const deliveryPhoneClean = (o.delivery_mobile || '').replace(/[\s\-\+]/g, '').toLowerCase();
-                const accountPhoneClean = (o.phone || '').replace(/[\s\-\+]/g, '').toLowerCase();
-                const deliveryName = (o.delivery_name || '').toLowerCase();
-                const orderNum = (o.order_num || '').toLowerCase();
-                const product = (o.product || '').toLowerCase();
-                const city = (o.city || '').toLowerCase();
-                const state = (o.state || '').toLowerCase();
-
-                const matchesQuery = 
-                    deliveryPhoneClean.includes(cleanQuery) ||
-                    accountPhoneClean.includes(cleanQuery) ||
-                    deliveryName.includes(rawQuery) ||
-                    orderNum.includes(rawQuery) ||
-                    product.includes(rawQuery) ||
-                    city.includes(rawQuery) ||
-                    state.includes(rawQuery);
-                
-                return matchesStatus && matchesQuery;
-            });
-
-            renderOrders(filtered);
-        }
-
-        // ==================== 100% ACCURATE TRACKING STEP DETECTOR ====================
-        function getActiveScanIndex(scans) {
-            if (!scans || scans.length === 0) return -1;
-
-            let activeIdx = -1;
-
-            // 1. First priority: Check scans for official active: true flag
-            for (let i = 0; i < scans.length; i++) {
-                const sc = scans[i];
-                if (sc.active === true) {
-                    activeIdx = i;
-                }
-            }
-
-            // 2. Fallback: If no explicit active flag, use latest non-empty timestamp scan
-            if (activeIdx === -1) {
-                for (let i = 0; i < scans.length; i++) {
-                    const sc = scans[i];
-                    if (sc.time && String(sc.time).trim().length > 0) {
-                        activeIdx = i;
-                    }
-                }
-            }
-
-            return activeIdx !== -1 ? activeIdx : 0;
-        }
-
-        // ==================== ORDER MODAL DETAILS ====================
-        async function openOrderModal(orderNum) {
-            const modal = document.getElementById('order-modal');
-            const loading = document.getElementById('modal-loading');
-            const body = document.getElementById('modal-body');
-
-            modal.classList.remove('hidden');
-            loading.classList.remove('hidden');
-            body.classList.add('hidden');
-
-            pushModalState('order-modal');
-
-            try {
-                const res = await fetch(`/api/orders/detail?order_num=${encodeURIComponent(orderNum)}&_t=${Date.now()}`);
-                const data = await res.json();
-
-                if (!data.ok || !data.detail) {
-                    loading.innerHTML = '<div class="text-red-500 text-xs font-bold">Failed to load tracking details.</div>';
-                    return;
-                }
-
-                const d = data.detail;
-                const p = d.product || {};
-                const addr = d.address || {};
-
-                document.getElementById('modal-product-name').innerText = p.name || 'Meesho Product';
-                document.getElementById('modal-product-img').src = p.image || '';
-                document.getElementById('modal-product-size').innerText = p.size || 'Free Size';
-                document.getElementById('modal-order-date').innerText = d.order_date || '-';
-
-                document.getElementById('modal-status-badge').outerHTML = `<span id="modal-status-badge">${getStatusBadge(d.status_title || d.status_sub)}</span>`;
-
-                document.getElementById('addr-name').innerText = addr.name || 'Recipient';
-                document.getElementById('addr-mobile').innerText = `Mobile: ${addr.mobile || '-'}`;
-                document.getElementById('addr-lines').innerText = `${addr.line1 || ''}, ${addr.line2 || ''}`;
-                document.getElementById('addr-city-state-pin').innerText = `${addr.city || ''}, ${addr.state || ''} - ${addr.pin || ''}`;
-
-                currentActiveModalAddress = `Name: ${addr.name || ''}\nMobile: ${addr.mobile || ''}\nAddress: ${addr.line1 || ''} ${addr.line2 || ''}\nCity: ${addr.city || ''}, State: ${addr.state || ''} - ${addr.pin || ''}`;
-
-                const courierCard = document.getElementById('modal-courier-card');
-                if (d.courier || d.awb || d.tracking_url) {
-                    courierCard.classList.remove('hidden');
-                    document.getElementById('modal-courier-name').innerText = d.courier || 'Courier Partner';
-                    document.getElementById('modal-courier-awb').innerText = d.awb || d.tracking_id || '';
-                    
-                    const trLink = document.getElementById('modal-tracking-link');
-                    if (d.tracking_url) {
-                        trLink.href = d.tracking_url;
-                        trLink.classList.remove('hidden');
-                    } else {
-                        trLink.classList.add('hidden');
-                    }
+                    `).join('');
                 } else {
-                    courierCard.classList.add('hidden');
+                    varsDiv.innerHTML = '<span class="text-xs text-slate-500">Standard Free Size</span>';
                 }
 
-                // Render Accurate Tracking Journey with Active Pulse Indicator
-                const timelineDiv = document.getElementById('modal-scans-timeline');
-                const scans = d.scans || [];
-                if (scans.length > 0) {
-                    const activeIdx = getActiveScanIndex(scans);
-
-                    timelineDiv.innerHTML = scans.map((sc, idx) => {
-                        const isCompleted = idx < activeIdx;
-                        const isCurrent = idx === activeIdx;
-                        const isPending = idx > activeIdx;
-
-                        let dotHtml = '';
-                        let textClass = '';
-                        let currentBadge = '';
-
-                        if (isCurrent) {
-                            dotHtml = `<div class="absolute -left-[19px] top-1 w-3.5 h-3.5 rounded-full bg-[#038d63] ring-4 ring-green-200 shadow-sm animate-pulse z-10"></div>`;
-                            textClass = 'text-xs font-black text-[#038d63]';
-                            currentBadge = `<span class="bg-green-100 text-[#038d63] text-[9px] font-extrabold px-1.5 py-0.2 rounded uppercase ml-2 border border-green-300 shadow-2xs">Current Location</span>`;
-                        } else if (isCompleted) {
-                            dotHtml = `<div class="absolute -left-[17px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#038d63] z-10"></div>`;
-                            textClass = 'text-xs font-semibold text-gray-700';
-                        } else {
-                            dotHtml = `<div class="absolute -left-[17px] top-1.5 w-2.5 h-2.5 rounded-full bg-white border-2 border-gray-300 z-10"></div>`;
-                            textClass = 'text-xs font-medium text-gray-400';
-                        }
-
-                        const timeStr = sc.time ? ` &bull; ${sc.time}` : '';
-                        const dateStr = sc.date ? `<div class="text-[10px] font-mono ${isCurrent ? 'text-gray-800 font-bold' : (isCompleted ? 'text-gray-500' : 'text-gray-400')} mt-0.5">${sc.date}${timeStr}</div>` : '';
-
-                        return `
-                            <div class="relative pl-5 pb-4">
-                                ${dotHtml}
-                                <div class="${textClass} flex items-center flex-wrap">
-                                    <span>${sc.status || 'Status update'}</span>
-                                    ${currentBadge}
-                                </div>
-                                ${dateStr}
-                            </div>
-                        `;
-                    }).join('');
+                // Promos
+                const promoDiv = document.getElementById('promos-list');
+                if (p.promos && p.promos.length > 0) {
+                    promoDiv.innerHTML = p.promos.map(pr => `
+                        <div class="text-xs bg-emerald-950/40 border border-emerald-800/40 text-emerald-300 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                            <i class="fa-solid fa-badge-percent"></i>
+                            <span>${pr.name}: <strong>${pr.text}</strong></span>
+                        </div>
+                    `).join('');
                 } else {
-                    timelineDiv.innerHTML = '<div class="text-xs text-gray-400 pl-2">No tracking updates recorded yet.</div>';
+                    promoDiv.innerHTML = '<span class="text-xs text-slate-500">First Order Discount Applied</span>';
                 }
 
-                loading.classList.add('hidden');
-                body.classList.remove('hidden');
+                resultCard.classList.remove('hidden');
+                resultCard.scrollIntoView({ behavior: 'smooth' });
 
             } catch (err) {
-                loading.innerHTML = '<div class="text-red-500 text-xs font-bold">Error connecting to tracking.</div>';
+                loading.classList.add('hidden');
+                btn.disabled = false;
+                document.getElementById('error-message').innerText = 'Network error or server unavailable.';
+                errorAlert.classList.remove('hidden');
             }
         }
-
-        function closeOrderModal() {
-            const modal = document.getElementById('order-modal');
-            if (modal && !modal.classList.contains('hidden')) {
-                modal.classList.add('hidden');
-                if (activeModalId === 'order-modal') {
-                    activeModalId = null;
-                    if (window.history.state && window.history.state.modalOpen) {
-                        window.history.back();
-                    }
-                }
-            }
-        }
-
-        // Close on backdrop clicks
-        document.getElementById('order-modal').addEventListener('click', function(e) {
-            if (e.target === this) closeOrderModal();
-        });
-        document.getElementById('product-detail-modal').addEventListener('click', function(e) {
-            if (e.target === this) closeProductModal();
-        });
-
-        // Initialize orders count on page load
-        fetch(`/api/orders/all?_t=${Date.now()}`).then(r => r.json()).then(d => {
-            if (d.ok && d.orders) {
-                document.getElementById('orders-badge-count').innerText = `${d.orders.length}`;
-            }
-        }).catch(() => {});
-
-        // Keyboard left/right arrow and escape listener
-        window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeProductModal();
-                closeOrderModal();
-            } else if (e.key === 'ArrowLeft') {
-                const prodModal = document.getElementById('product-detail-modal');
-                if (prodModal && !prodModal.classList.contains('hidden')) {
-                    slideModalImage(-1);
-                }
-            } else if (e.key === 'ArrowRight') {
-                const prodModal = document.getElementById('product-detail-modal');
-                if (prodModal && !prodModal.classList.contains('hidden')) {
-                    slideModalImage(1);
-                }
-            }
-        });
-
-        // Initial default search
-        
-        // ==================== MULTI-LANGUAGE NOTICE TRANSLATIONS ====================
-        const NOTICE_TRANSLATIONS = {
-            en: {
-                title: "Meesho Order & Delivery Status Update",
-                badge: "Important Notice",
-                subtitle: "Please read regarding recent Meesho automated cancellations & refund policy.",
-                trackBtn: "Track Orders",
-                card1Title: "100% Delivery Goal & Cancellation Alert",
-                card1Desc: "We always strive for <strong>100% guaranteed delivery</strong> of every order. However, Meesho backend is currently auto-cancelling several freshly placed orders before dispatch.",
-                card1Shipped: `<i class="fa-solid fa-truck-ramp-box text-emerald-600 mr-1"></i><strong>If your product has been SHIPPED:</strong> It will <strong>definitely be delivered</strong> to your doorstep with full tracking.`,
-                card2Title: "Un-Shipped Orders & Guaranteed Refunds",
-                card2Desc: `<strong>If your order is in "ORDERED" status (not yet shipped):</strong> Please wait for further tracking updates. You can monitor live status under the <strong>Track All Orders</strong> tab.`,
-                card2Refund: `<i class="fa-brands fa-whatsapp text-emerald-600 text-xs mr-1"></i><strong>Refund Process:</strong> If your order gets cancelled by Meesho, your refund will be promptly sent to your <strong>WhatsApp</strong> (with deduction of number & server cost per T&C).`,
-                footer: "Thank you for shopping with us! Please stay tuned as we prepare the next big discount offers.",
-                support: "Updated: Today &bull; Meesho Hub Support"
-            },
-            hi: {
-                title: "मीशो ऑर्डर एवं डिलीवरी स्टेटस सूचना",
-                badge: "आवश्यक सूचना",
-                subtitle: "हाल ही में मीशो द्वारा ऑर्डर कैंसिलेशन और रिफंड प्रक्रिया से संबंधित महत्वपूर्ण जानकारी।",
-                trackBtn: "ऑर्डर ट्रैक करें",
-                card1Title: "100% डिलीवरी लक्ष्य एवं कैंसिलेशन अपडेट",
-                card1Desc: "हम हमेशा हर ऑर्डर की <strong>100% सफल डिलीवरी</strong> के लिए पूरी कोशिश करते हैं। लेकिन अभी मीशो सिस्टम द्वारा कुछ नए ऑर्डर्स डिस्पैच से पहले ऑटो-कैंसिल किए जा रहे हैं।",
-                card1Shipped: `<i class="fa-solid fa-truck-ramp-box text-emerald-600 mr-1"></i><strong>यदि आपका प्रोडक्ट SHIPPED हो चुका है:</strong> तो यह आपके पते पर <strong>100% निश्चित रूप से डिलीवर</strong> होगा।`,
-                card2Title: "अन-शिप्ड ऑर्डर्स एवं सुरक्षित रिफंड",
-                card2Desc: `<strong>यदि आपका ऑर्डर "ORDERED" स्थिति में है (अभी तक शिप नहीं हुआ):</strong> तो कृपया आगे के अपडेट की प्रतीक्षा करें। आप <strong>Track All Orders</strong> टैब में लाइव स्टेटस देख सकते हैं।`,
-                card2Refund: `<i class="fa-brands fa-whatsapp text-emerald-600 text-xs mr-1"></i><strong>रिफंड प्रक्रिया:</strong> यदि मीशो द्वारा आपका ऑर्डर कैंसिल होता है, तो नंबर एवं सर्वर चार्ज (T&C अनुसार) काटकर आपका पूरा बाकी रिफंड सीधे आपके <strong>WhatsApp</strong> पर भेज दिया जाएगा।`,
-                footer: "हमारे साथ खरीदारी करने के लिए धन्यवाद! नए डिस्काउंट और ऑफर्स के लिए जुड़े रहें।",
-                support: "अपडेटेड: आज &bull; मीशो हब सपोर्ट"
-            },
-            or: {
-                title: "ମିଶୋ ଅର୍ଡର ଏବଂ ଡେଲିଭରୀ ଷ୍ଟାଟସ୍ ସୂଚନା",
-                badge: "ଜରୁରୀ ସୂଚନା",
-                subtitle: "ମିଶୋ ଅଟୋ-କ୍ୟାନସିଲେସନ୍ ଏବଂ ରିଫଣ୍ଡ ନିୟମ ସମ୍ବନ୍ଧୀୟ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ ସୂଚନା।",
-                trackBtn: "ଅର୍ଡର ଟ୍ରାକ୍ କରନ୍ତୁ",
-                card1Title: "୧୦୦% ଡେଲିଭରୀ ଲକ୍ଷ୍ୟ ଏବଂ କ୍ୟାନସିଲେସନ୍ ଅପଡେଟ୍",
-                card1Desc: "ଆମେ ସର୍ବଦା ପ୍ରତ୍ୟେକ ଅର୍ଡରକୁ <strong>୧୦୦% ସଫଳତାର ସହ ଡେଲିଭରୀ</strong> କରିବାକୁ ଚେଷ୍ଟା କରୁ। କିନ୍ତୁ ବର୍ତ୍ତମାନ ମିଶୋ ସିଷ୍ଟମ୍ ଦ୍ୱାରା କିଛି ନୂଆ ଅର୍ଡର ଡିସପାଚ୍ ହେବା ପୂର୍ବରୁ କ୍ୟାନସଲ୍ କରାଯାଉଛି।",
-                card1Shipped: `<i class="fa-solid fa-truck-ramp-box text-emerald-600 mr-1"></i><strong>ଯଦି ଆପଣଙ୍କ ପ୍ରଡକ୍ଟ SHIPPED ହୋଇସାରିଛି:</strong> ତେବେ ଏହା ନିଶ୍ଚିତ ଭାବରେ ଆପଣଙ୍କ ପାଖରେ <strong>ଡେଲିଭରୀ ହେବ</strong>।`,
-                card2Title: "ଅନ-ସିପ୍ଡ ଅର୍ଡର ଏବଂ ସୁରକ୍ଷିତ ରିଫଣ୍ଡ",
-                card2Desc: `<strong>ଯଦି ଆପଣଙ୍କ ଅର୍ଡର "ORDERED" ଷ୍ଟାଟସରେ ଅଛି (ଶିପ୍ ହୋଇନାହିଁ):</strong> ତେବେ ଦୟାକରି ଆଗାମୀ ଅପଡେଟ୍ ପର୍ଯ୍ୟନ୍ତ ଅପେକ୍ଷା କରନ୍ତୁ। ଆପଣ <strong>Track All Orders</strong> ଟ୍ୟାବ୍ ରେ ଲାଇଭ୍ ଷ୍ଟାଟସ୍ ଦେଖିପାରିବେ।`,
-                card2Refund: `<i class="fa-brands fa-whatsapp text-emerald-600 text-xs mr-1"></i><strong>ରିଫଣ୍ଡ ପ୍ରକ୍ରିୟା:</strong> ଯଦି ମିଶୋ ଦ୍ୱାରା ଅର୍ଡର କ୍ୟାନସଲ୍ ହୁଏ, ତେବେ ନମ୍ବର ଏବଂ ସର୍ଭର ଖର୍ଚ୍ଚ (T&C ଅନୁସାରେ) କାଟି ବାକି ରିଫଣ୍ଡ ସିଧାସଳଖ ଆପଣଙ୍କ <strong>WhatsApp</strong> ରେ ପଠାଯିବ।`,
-                footer: "ଆମ ସହିତ ସପିଂ କରିଥିବାରୁ ଧନ୍ୟବାଦ! ଆଗାମୀ ନୂଆ ଅଫର ଏବଂ ରିହାତି ପାଇଁ ଯୋଡ଼ି ହୋଇ ରୁହନ୍ତୁ।",
-                support: "ଅପଡେଟ୍: ଆଜି &bull; ମିଶୋ ହବ୍ ସପୋର୍ଟ"
-            }
-        };
-
-        function setNoticeLanguage(lang) {
-            const data = NOTICE_TRANSLATIONS[lang] || NOTICE_TRANSLATIONS.en;
-            
-            ['en', 'hi', 'or'].forEach(l => {
-                const btn = document.getElementById(`lang-btn-${l}`);
-                if (btn) {
-                    if (l === lang) {
-                        btn.className = "px-2.5 py-1 rounded-lg transition-all bg-[#f43397] text-white shadow-xs cursor-pointer";
-                    } else {
-                        btn.className = "px-2.5 py-1 rounded-lg transition-all text-gray-700 hover:text-[#f43397] cursor-pointer";
-                    }
-                }
-            });
-
-            const titleEl = document.getElementById('notice-title');
-            if (titleEl) titleEl.innerText = data.title;
-
-            const badgeEl = document.getElementById('notice-badge');
-            if (badgeEl) badgeEl.innerText = data.badge;
-
-            const subEl = document.getElementById('notice-subtitle');
-            if (subEl) subEl.innerText = data.subtitle;
-
-            const trackBtnEl = document.getElementById('notice-track-btn-text');
-            if (trackBtnEl) trackBtnEl.innerText = data.trackBtn;
-
-            const c1Title = document.getElementById('notice-card1-title');
-            if (c1Title) c1Title.innerText = data.card1Title;
-
-            const c1Desc = document.getElementById('notice-card1-desc');
-            if (c1Desc) c1Desc.innerHTML = data.card1Desc;
-
-            const c1Ship = document.getElementById('notice-card1-shipped');
-            if (c1Ship) c1Ship.innerHTML = data.card1Shipped;
-
-            const c2Title = document.getElementById('notice-card2-title');
-            if (c2Title) c2Title.innerText = data.card2Title;
-
-            const c2Desc = document.getElementById('notice-card2-desc');
-            if (c2Desc) c2Desc.innerHTML = data.card2Desc;
-
-            const c2Ref = document.getElementById('notice-card2-refund');
-            if (c2Ref) c2Ref.innerHTML = data.card2Refund;
-
-            const footerEl = document.getElementById('notice-footer-text');
-            if (footerEl) footerEl.innerText = data.footer;
-
-            const supEl = document.getElementById('notice-footer-support');
-            if (supEl) supEl.innerHTML = data.support;
-        }
-
-
-        performSearch('Trending');
     </script>
 </body>
 </html>
