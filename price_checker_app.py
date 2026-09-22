@@ -148,13 +148,3 @@ def serve_home():
         with open(html_path, "r", encoding="utf-8") as f:
             return f.read()
     return "<h1>Price Checker UI Not Found</h1>"
-
-@app.get("/bill", response_class=HTMLResponse)
-@app.get("/whatsapp", response_class=HTMLResponse)
-@app.get("/quotation", response_class=HTMLResponse)
-def serve_bill_page():
-    html_path = os.path.join(BASE_DIR, "bill_generator.html")
-    if os.path.exists(html_path):
-        with open(html_path, "r", encoding="utf-8") as f:
-            return f.read()
-    return "<h1>Bill Generator UI Not Found</h1>"
