@@ -29,7 +29,7 @@
                         WhatsApp Bill Generator
                         <span class="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">Auto Quotation</span>
                     </h1>
-                    <p class="text-[11px] text-slate-400">Convert Meesho links into WhatsApp customer quotations</p>
+                    <p class="text-[11px] text-slate-400">Convert Meesho links into WhatsApp customer quotations with Quantity Support</p>
                 </div>
             </div>
 
@@ -53,7 +53,7 @@
                         <i class="fa-solid fa-paste text-emerald-400"></i>
                         Paste Links or WhatsApp Messages
                     </h2>
-                    <p class="text-xs text-slate-400 mt-1">Paste links directly or paste entire WhatsApp chats with links. We extract all links automatically.</p>
+                    <p class="text-xs text-slate-400 mt-1">Paste multiple links or entire WhatsApp chats. Repeating a link automatically adds quantity!</p>
                 </div>
 
                 <!-- Margin Adjustment Badge -->
@@ -61,26 +61,34 @@
                     <span class="text-xs text-slate-400 font-medium">Profit Margin:</span>
                     <div class="flex items-center gap-1 font-mono font-bold text-emerald-400 text-sm">
                         <span>+₹</span>
-                        <input id="custom-margin" type="number" value="50" min="0" max="500" class="w-14 bg-slate-900 border border-slate-700 rounded-lg px-1.5 py-0.5 text-center text-white text-xs outline-none focus:border-emerald-500" />
+                        <input id="custom-margin" type="number" value="53" min="0" max="500" class="w-14 bg-slate-900 border border-slate-700 rounded-lg px-1.5 py-0.5 text-center text-white text-xs outline-none focus:border-emerald-500" />
                     </div>
                 </div>
             </div>
 
             <!-- Textarea -->
-            <div class="space-y-2">
+            <div class="space-y-3">
                 <textarea 
                     id="raw-input" 
                     rows="6"
                     oninput="handleInputChange()"
-                    placeholder="Paste here... E.g.&#10;[22/9, 21:28] Daitari Sahu Delivery: https://www.meesho.com/s/p/9lid2n&#10;https://www.meesho.com/s/p/hes50h&#10;https://www.meesho.com/s/p/hbn2ym"
+                    placeholder="Paste here... E.g.&#10;[22/9, 21:28] Daitari Sahu Delivery: https://www.meesho.com/s/p/9lid2n&#10;https://www.meesho.com/s/p/9lid2n&#10;https://www.meesho.com/s/p/hes50h&#10;(Repeating a link counts as 2 Qty)"
                     class="w-full p-4 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-2xl text-sm text-slate-200 placeholder-slate-600 outline-none transition font-mono shadow-inner resize-y"
                 ></textarea>
 
+                <!-- Options Row -->
                 <div class="flex flex-wrap items-center justify-between gap-3 pt-1">
-                    <div class="flex items-center gap-2 text-xs">
+                    <div class="flex flex-wrap items-center gap-3 text-xs">
                         <span id="detected-count-badge" class="bg-slate-800/80 text-slate-400 px-3 py-1 rounded-full font-semibold">
                             0 links detected
                         </span>
+                        
+                        <!-- Auto-group duplicate links checkbox -->
+                        <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer select-none bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-xl">
+                            <input id="chk-group-dupes" type="checkbox" checked class="accent-emerald-500 rounded w-3.5 h-3.5 cursor-pointer" />
+                            <span>Auto-group duplicate links as Qty (×2)</span>
+                        </label>
+
                         <button type="button" onclick="clearInput()" class="text-slate-500 hover:text-slate-300 text-xs transition underline cursor-pointer">
                             Clear
                         </button>
@@ -119,7 +127,7 @@
             <!-- Summary KPI Cards -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div class="glass-card rounded-2xl p-4 text-center">
-                    <p class="text-[11px] text-slate-400 font-medium">Total Products</p>
+                    <p class="text-[11px] text-slate-400 font-medium">Total Quantity</p>
                     <p id="kpi-count" class="text-xl font-black text-white mt-1">0</p>
                 </div>
                 <div class="glass-card rounded-2xl p-4 text-center">
@@ -170,12 +178,15 @@
                 </div>
             </div>
 
-            <!-- Detailed Products Table -->
+            <!-- Detailed Products Table with Qty Stepper -->
             <div class="glass-card rounded-3xl p-6 shadow-2xl space-y-4">
-                <h3 class="text-base font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-slate-400"></i>
-                    Product Breakdown (Click name to edit)
-                </h3>
+                <div class="flex items-center justify-between">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-slate-400"></i>
+                        Product Breakdown (Edit Name & Quantity directly)
+                    </h3>
+                    <span class="text-[11px] text-slate-400">Use <strong class="text-white">+ / -</strong> to change quantity</span>
+                </div>
 
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
@@ -183,8 +194,9 @@
                             <tr class="border-b border-slate-800 text-slate-400 font-semibold">
                                 <th class="pb-3 w-8">#</th>
                                 <th class="pb-3">Product Name</th>
-                                <th class="pb-3 text-right">MRP</th>
-                                <th class="pb-3 text-right text-emerald-400">Offer Price</th>
+                                <th class="pb-3 text-center w-28">Quantity</th>
+                                <th class="pb-3 text-right">Unit MRP</th>
+                                <th class="pb-3 text-right text-emerald-400">Total Offer Price</th>
                                 <th class="pb-3 text-center w-12">Action</th>
                             </tr>
                         </thead>
@@ -207,6 +219,7 @@
     <script>
         let extractedLinks = [];
         let fetchedProducts = [];
+        const apiCache = {};
 
         // Auto load admin margin on startup
         window.addEventListener('DOMContentLoaded', async () => {
@@ -223,21 +236,20 @@
             }
         });
 
+        // Bug Fix: Keep ALL links, do not deduplicate, so multiple quantities are captured!
         function extractMeeshoUrls(text) {
             if (!text) return [];
-            // Match meesho.com URLs (short links, product links, query params)
             const regex = /(https?:\/\/(?:www\.)?meesho\.com\/[^\s\)]+)/gi;
             const matches = text.match(regex) || [];
             
-            // Deduplicate and clean trailing characters
-            const unique = [];
+            const list = [];
             for (let url of matches) {
                 let clean = url.trim().replace(/[\,\.\>\<\'\"\]]$/, '');
-                if (clean && !unique.includes(clean)) {
-                    unique.push(clean);
+                if (clean) {
+                    list.push(clean);
                 }
             }
-            return unique;
+            return list;
         }
 
         function handleInputChange() {
@@ -247,11 +259,19 @@
             const badge = document.getElementById('detected-count-badge');
             const btn = document.getElementById('btn-generate');
             
-            badge.innerText = `${extractedLinks.length} links detected`;
-            if (extractedLinks.length > 0) {
+            const totalCount = extractedLinks.length;
+            const uniqueCount = new Set(extractedLinks).size;
+            
+            if (totalCount > 0) {
+                if (totalCount !== uniqueCount) {
+                    badge.innerText = `${totalCount} links detected (${uniqueCount} unique, ${totalCount - uniqueCount} repeats)`;
+                } else {
+                    badge.innerText = `${totalCount} link${totalCount > 1 ? 's' : ''} detected`;
+                }
                 badge.className = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full font-bold";
                 btn.disabled = false;
             } else {
+                badge.innerText = "0 links detected";
                 badge.className = "bg-slate-800/80 text-slate-400 px-3 py-1 rounded-full font-semibold";
                 btn.disabled = true;
             }
@@ -267,13 +287,12 @@
 
         function simplifyTitle(name) {
             if (!name) return "Meesho Product";
-            // Clean up common seller junk
             let clean = name.replace(/\b(pack of \d+)\b/i, (m) => m)
-                            .replace(/\|.*$/, '') // cut off seller brand tags after pipe
+                            .replace(/\|.*$/, '')
                             .replace(/\b(best for|for men|for women|for home)\b.*$/i, '')
                             .trim();
-            if (clean.length > 40) {
-                clean = clean.substring(0, 38).trim() + "...";
+            if (clean.length > 42) {
+                clean = clean.substring(0, 40).trim() + "...";
             }
             return clean || name.substring(0, 35);
         }
@@ -287,53 +306,85 @@
             const progressStatus = document.getElementById('progress-status');
             const progressFraction = document.getElementById('progress-fraction');
             const resultContainer = document.getElementById('result-container');
-            const margin = parseInt(document.getElementById('custom-margin').value) || 50;
+            const margin = parseInt(document.getElementById('custom-margin').value) || 53;
+            const groupDupes = document.getElementById('chk-group-dupes').checked;
 
             btn.disabled = true;
             progressCard.classList.remove('hidden');
             resultContainer.classList.add('hidden');
             fetchedProducts = [];
 
-            const total = extractedLinks.length;
+            // Group links or keep separate based on checkbox
+            let taskList = [];
+            if (groupDupes) {
+                const countMap = {};
+                const order = [];
+                for (let l of extractedLinks) {
+                    if (!countMap[l]) {
+                        countMap[l] = 0;
+                        order.push(l);
+                    }
+                    countMap[l] += 1;
+                }
+                taskList = order.map(l => ({ link: l, qty: countMap[l] }));
+            } else {
+                taskList = extractedLinks.map(l => ({ link: l, qty: 1 }));
+            }
+
+            const total = taskList.length;
             progressBar.style.width = '0%';
 
             for (let i = 0; i < total; i++) {
-                const link = extractedLinks[i];
+                const item = taskList[i];
+                const link = item.link;
+                const qty = item.qty;
+
                 progressFraction.innerText = `${i + 1} / ${total}`;
                 progressBar.style.width = `${Math.round(((i + 1) / total) * 100)}%`;
                 progressStatus.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> Checking item ${i + 1} of ${total}...`;
 
                 try {
-                    const res = await fetch('/api/check-price', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ link: link })
-                    });
-                    
-                    if (res.ok) {
-                        const data = await res.json();
-                        const p = data.product || {};
+                    let p = apiCache[link];
+                    if (!p) {
+                        const res = await fetch('/api/check-price', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ link: link })
+                        });
+                        if (res.ok) {
+                            const data = await res.json();
+                            p = data.product || {};
+                            apiCache[link] = p;
+                        }
+                    }
+
+                    if (p) {
                         const baseUpi = p.original_upi || 0;
-                        const finalOffer = baseUpi > 0 ? (baseUpi + margin) : (p.customer_upi || 0);
+                        const unitOffer = baseUpi > 0 ? (baseUpi + margin) : (p.customer_upi || 0);
+                        const unitMrp = p.mrp || 299;
 
                         fetchedProducts.push({
                             id: p.id,
                             link: link,
                             full_name: p.name || `Product #${i + 1}`,
                             display_name: simplifyTitle(p.name),
-                            mrp: p.mrp || 0,
-                            original_upi: baseUpi,
-                            offer_price: finalOffer
+                            unit_mrp: unitMrp,
+                            unit_offer: unitOffer,
+                            qty: qty,
+                            mrp: unitMrp * qty,
+                            offer_price: unitOffer * qty
                         });
                     } else {
-                        // Fallback record if API failed on a link
+                        // Fallback
                         fetchedProducts.push({
                             link: link,
                             full_name: `Product #${i + 1}`,
                             display_name: `Product #${i + 1}`,
-                            mrp: 299,
-                            original_upi: 49,
-                            offer_price: 49 + margin
+                            unit_mrp: 299,
+                            unit_offer: 49 + margin,
+                            qty: qty,
+                            mrp: 299 * qty,
+                            offer_price: (49 + margin) * qty
                         });
                     }
                 } catch (err) {
@@ -341,7 +392,7 @@
                 }
             }
 
-            progressStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Done! All ${total} products verified.`;
+            progressStatus.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Done! All items verified with quantities.`;
             renderResults();
             btn.disabled = false;
         }
@@ -353,10 +404,15 @@
 
             let totalMrp = 0;
             let totalOffer = 0;
+            let totalQty = 0;
 
             fetchedProducts.forEach((item, index) => {
+                item.mrp = item.unit_mrp * item.qty;
+                item.offer_price = item.unit_offer * item.qty;
+
                 totalMrp += item.mrp;
                 totalOffer += item.offer_price;
+                totalQty += item.qty;
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-900/50 transition";
@@ -371,7 +427,14 @@
                             class="w-full bg-transparent border-b border-dashed border-slate-700 focus:border-emerald-500 outline-none text-white text-xs py-0.5"
                         />
                     </td>
-                    <td class="py-3 text-right text-slate-400 line-through">₹${item.mrp}</td>
+                    <td class="py-3 text-center">
+                        <div class="inline-flex items-center gap-1.5 bg-slate-950 border border-slate-700/80 rounded-xl px-2 py-1">
+                            <button onclick="changeQty(${index}, -1)" class="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-xs cursor-pointer">-</button>
+                            <span class="w-6 text-center font-mono font-bold text-emerald-400 text-xs">${item.qty}</span>
+                            <button onclick="changeQty(${index}, 1)" class="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-800 transition font-bold text-xs cursor-pointer">+</button>
+                        </div>
+                    </td>
+                    <td class="py-3 text-right text-slate-400 line-through">₹${item.unit_mrp}</td>
                     <td class="py-3 text-right font-bold text-emerald-400">₹${item.offer_price}</td>
                     <td class="py-3 text-center">
                         <button onclick="removeItem(${index})" class="text-slate-500 hover:text-rose-400 transition" title="Remove Item">
@@ -385,14 +448,28 @@
             const totalSavings = Math.max(0, totalMrp - totalOffer);
             const savingsPercent = totalMrp > 0 ? Math.round((totalSavings / totalMrp) * 100) : 0;
 
-            document.getElementById('kpi-count').innerText = fetchedProducts.length;
+            document.getElementById('kpi-count').innerText = `${totalQty} (in ${fetchedProducts.length} items)`;
             document.getElementById('kpi-mrp').innerText = `₹${totalMrp.toLocaleString('en-IN')}`;
             document.getElementById('kpi-offer').innerText = `₹${totalOffer.toLocaleString('en-IN')}`;
             document.getElementById('kpi-savings').innerText = `₹${totalSavings.toLocaleString('en-IN')} (${savingsPercent}%)`;
 
-            generateWhatsAppText(totalMrp, totalOffer, totalSavings, savingsPercent);
+            generateWhatsAppText(totalMrp, totalOffer, totalSavings, savingsPercent, totalQty);
             resultContainer.classList.remove('hidden');
             resultContainer.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function changeQty(index, delta) {
+            if (fetchedProducts[index]) {
+                const newQty = fetchedProducts[index].qty + delta;
+                if (newQty <= 0) {
+                    if (confirm("Remove this product?")) {
+                        removeItem(index);
+                    }
+                    return;
+                }
+                fetchedProducts[index].qty = newQty;
+                renderResults();
+            }
         }
 
         function updateItemName(index, newName) {
@@ -410,13 +487,17 @@
         function recalculateAndRefreshText() {
             let totalMrp = 0;
             let totalOffer = 0;
+            let totalQty = 0;
             fetchedProducts.forEach(i => {
+                i.mrp = i.unit_mrp * i.qty;
+                i.offer_price = i.unit_offer * i.qty;
                 totalMrp += i.mrp;
                 totalOffer += i.offer_price;
+                totalQty += i.qty;
             });
             const totalSavings = Math.max(0, totalMrp - totalOffer);
             const savingsPercent = totalMrp > 0 ? Math.round((totalSavings / totalMrp) * 100) : 0;
-            generateWhatsAppText(totalMrp, totalOffer, totalSavings, savingsPercent);
+            generateWhatsAppText(totalMrp, totalOffer, totalSavings, savingsPercent, totalQty);
         }
 
         function getEmojiNumber(num) {
@@ -427,20 +508,26 @@
 
         let currentWpMessage = "";
 
-        function generateWhatsAppText(totalMrp, totalOffer, totalSavings, savingsPercent) {
+        function generateWhatsAppText(totalMrp, totalOffer, totalSavings, savingsPercent, totalQty) {
             let lines = [];
             lines.push("🛍️ *YOUR ORDER PRICE DETAILS*");
             lines.push("━━━━━━━━━━━━━━━━━━━━━\n");
 
             fetchedProducts.forEach((item, index) => {
                 const num = getEmojiNumber(index + 1);
-                lines.push(`${num} *${item.display_name}*`);
-                lines.push(`• Original Price: ~₹${item.mrp}~`);
-                lines.push(`• *Offer Price: ₹${item.offer_price}*\n`);
+                if (item.qty > 1) {
+                    lines.push(`${num} *${item.display_name}* (Qty: ${item.qty})`);
+                    lines.push(`• Original Price: ~₹${item.mrp.toLocaleString('en-IN')}~ (₹${item.unit_mrp} each)`);
+                    lines.push(`• *Offer Price: ₹${item.offer_price.toLocaleString('en-IN')}* (₹${item.unit_offer} each)\n`);
+                } else {
+                    lines.push(`${num} *${item.display_name}*`);
+                    lines.push(`• Original Price: ~₹${item.mrp.toLocaleString('en-IN')}~`);
+                    lines.push(`• *Offer Price: ₹${item.offer_price.toLocaleString('en-IN')}*\n`);
+                }
             });
 
             lines.push("━━━━━━━━━━━━━━━━━━━━━");
-            lines.push(`📦 *TOTAL ITEMS: ${fetchedProducts.length}*`);
+            lines.push(`📦 *TOTAL QUANTITY: ${totalQty}*`);
             lines.push(`💰 *Total Original Price:* ~₹${totalMrp.toLocaleString('en-IN')}~`);
             lines.push(`🔥 *FINAL OFFER PRICE: ₹${totalOffer.toLocaleString('en-IN')}*`);
             lines.push(`🎉 *Total Savings: ₹${totalSavings.toLocaleString('en-IN')} (${savingsPercent}% OFF)*`);
