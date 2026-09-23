@@ -209,6 +209,17 @@ def download_portable_app():
         )
     raise HTTPException(status_code=404, detail="App package not found")
 
+# ----------------- APP VERSION ENDPOINT FOR AUTO-UPDATER -----------------
+@app.get("/api/app-version")
+def get_app_version():
+    return {
+        "ok": True,
+        "version_code": 2,
+        "version_name": "1.0.1",
+        "apk_url": "http://72.62.231.27:8080/download",
+        "changelog": "Fixed smooth scrolling and enabled automatic in-app updates"
+    }
+
 # ----------------- 1. AUTOCOMPLETE / SEARCH SUGGESTIONS -----------------
 @app.get("/api/search/suggestions")
 def get_search_suggestions(q: str = Query("", description="Prefix text")):

@@ -678,16 +678,33 @@
     </footer>
 
     <script>
-        // PWA Install Prompt handling
+        // PWA Install Prompt & Native Android Bridge
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            const btn = document.getElementById('btn-install-app');
-            if (btn) btn.classList.remove('hidden');
         });
 
+        function initNativeAppBridge() {
+            if (window.AndroidApp && typeof window.AndroidApp.isNativeApp === 'function' && window.AndroidApp.isNativeApp()) {
+                const btn = document.getElementById('btn-install-app');
+                if (btn) {
+                    btn.onclick = function() {
+                        window.AndroidApp.updateApp();
+                    };
+                    btn.innerHTML = '<i class="fa-solid fa-arrows-rotate text-sm"></i> <span class="hidden xs:inline">Update App</span><span class="xs:hidden">Update</span>';
+                    btn.title = "Check & Install App Updates";
+                    btn.classList.remove('border-[#f43397]', 'text-[#f43397]');
+                    btn.classList.add('bg-pink-50', 'text-[#f43397]', 'border-pink-300');
+                }
+            }
+        }
+
         function triggerAppInstall() {
+            if (window.AndroidApp && typeof window.AndroidApp.updateApp === 'function') {
+                window.AndroidApp.updateApp();
+                return;
+            }
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
@@ -697,6 +714,10 @@
                 window.location.href = '/download';
             }
         }
+
+        window.addEventListener('DOMContentLoaded', initNativeAppBridge);
+        setTimeout(initNativeAppBridge, 500);
+        setTimeout(initNativeAppBridge, 1500);
 
         // Register Service Worker
         if ('serviceWorker' in navigator) {
