@@ -509,7 +509,13 @@
                     <!-- Right: Product Name, Price, Sizes & Supplier -->
                     <div class="md:col-span-6 space-y-4">
                         <div>
-                            <span id="modal-p-supplier" class="text-[11px] font-bold text-gray-500 uppercase bg-gray-100 px-2.5 py-1 rounded">Supplier Name</span>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span id="modal-p-supplier" class="text-[11px] font-bold text-gray-500 uppercase bg-gray-100 px-2.5 py-1 rounded">Supplier Name</span>
+                                <span id="modal-p-mall-tag" class="hidden bg-gradient-to-r from-[#4b1d6d] to-[#6d28d9] text-white text-[11px] font-black px-2.5 py-0.5 rounded-full items-center gap-1 shadow-sm border border-purple-300/30">
+                                    <i class="fa-solid fa-bag-shopping text-[10px] text-pink-300"></i>
+                                    <span>Meesho Mall</span>
+                                </span>
+                            </div>
                             <h3 id="modal-p-name" class="text-base sm:text-lg font-bold text-gray-900 mt-2 leading-snug">Product Name</h3>
                             
                             <div class="flex items-center gap-2 mt-2">
@@ -944,12 +950,14 @@
             const html = items.map(p => {
                 const img = p.image || 'https://images.meesho.com/images/products/placeholder.jpg';
                 const discount = p.discount_text ? `<span class="bg-green-100 text-[#038d63] text-[10px] font-bold px-1.5 py-0.5 rounded">${p.discount_text}</span>` : '';
+                const mallBadge = p.mall ? `<span class="bg-gradient-to-r from-[#4b1d6d] to-[#6d28d9] text-white text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm border border-purple-300/30"><i class="fa-solid fa-bag-shopping text-[9px] text-pink-300"></i>Mall</span>` : '';
 
                 return `
                     <div class="bg-white border border-gray-200 hover:border-gray-300 hover:shadow-md rounded-xl overflow-hidden transition-all flex flex-col justify-between cursor-pointer group" onclick="openProductDetailModal('${p.link}')">
                         <div class="aspect-square bg-gray-50 relative overflow-hidden flex items-center justify-center">
                             <img src="${img}" alt="${p.name}" class="w-full h-full object-contain group-hover:scale-105 transition-all duration-300" loading="lazy" />
-                            <div class="absolute top-2 left-2 flex gap-1">
+                            <div class="absolute top-2 left-2 flex flex-col gap-1 items-start z-10">
+                                ${mallBadge}
                                 ${discount}
                             </div>
                         </div>
@@ -1179,6 +1187,17 @@
 
                 document.getElementById('modal-p-name').innerText = p.name || 'Meesho Product';
                 document.getElementById('modal-p-supplier').innerText = p.supplier || 'Verified Supplier';
+
+                const mallTag = document.getElementById('modal-p-mall-tag');
+                if (mallTag) {
+                    if (p.mall) {
+                        mallTag.classList.remove('hidden');
+                        mallTag.classList.add('inline-flex');
+                    } else {
+                        mallTag.classList.add('hidden');
+                        mallTag.classList.remove('inline-flex');
+                    }
+                }
 
                 const images = (p.images && p.images.length > 0) ? p.images : ['https://images.meesho.com/images/products/placeholder.jpg'];
                 currentProductImages = images;
@@ -1498,7 +1517,13 @@
                 const data = await res.json();
 
                 if (!data.ok || !data.detail) {
-                    loading.innerHTML = '<div class="text-red-500 text-xs font-bold">Failed to load tracking details.</div>';
+                    loading.innerHTML = `
+                        <div class="p-6 text-center space-y-2">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-500 text-2xl"></i>
+                            <div class="text-gray-800 text-sm font-bold">No Account / Tracking Unavailable</div>
+                            <div class="text-gray-500 text-xs">${data.error || 'Tracking details are not available for this order.'}</div>
+                        </div>
+                    `;
                     return;
                 }
 

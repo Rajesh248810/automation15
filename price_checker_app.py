@@ -281,7 +281,8 @@ def search_products(req: ProductSearchRequest):
                 "margin_added": margin,
                 "discount_text": discount_text,
                 "link": pid_to_meesho_url(pid),
-                "supplier_id": it.get("supplier_id")
+                "supplier_id": it.get("supplier_id"),
+                "mall": bool(it.get("mall") or it.get("is_mall"))
             })
 
         next_cursor = data.get("cursor")
@@ -364,6 +365,8 @@ def check_price(req: ProductCheckRequest):
                 "id": pid,
                 "name": prod.get("name"),
                 "supplier": prod.get("supplier", "Verified Supplier"),
+                "mall": bool(prod.get("mall") or prod.get("is_mall")),
+                "brand": prod.get("brand", ""),
                 "mrp": mrp,
                 "original_upi": base_upi,
                 "customer_upi": customer_upi,
@@ -384,11 +387,13 @@ def check_price(req: ProductCheckRequest):
 
 # Helper to fetch single order detail and extract delivery address mobile
 def fetch_order_address_sync(order_num):
-    if order_num in order_details_cache and order_details_cache[order_num].get("delivery_mobile"):
-        return order_details_cache[order_num]
+    if order_num in order_details_cache:
+        cached = order_details_cache[order_num]
+        if cached.get("delivery_mobile") or cached.get("no_account"):
+            return cached
 
     try:
-        r = requests.get(f"{WEBAPP_BASE_URL}/api/orders/{order_num}", headers=headers, timeout=8)
+        r = requests.get(f"{WEBAPP_BASE_URL}/api/orders/{order_num}", headers=headers, timeout=5)
         data = r.json()
         if data.get("ok"):
             d = data.get("detail", {})
@@ -401,6 +406,15 @@ def fetch_order_address_sync(order_num):
                 "pin": str(addr.get("pin", "")).strip(),
                 "courier": str(d.get("courier", "")).strip(),
                 "awb": str(d.get("awb", "")).strip(),
+                "no_account": False,
+                "updated_at": time.time()
+            }
+            order_details_cache[order_num] = info
+            return info
+        else:
+            info = {
+                "no_account": True,
+                "error": data.get("error", "No account available"),
                 "updated_at": time.time()
             }
             order_details_cache[order_num] = info
@@ -422,7 +436,7 @@ def get_all_orders(refresh: bool = False):
             params = {"offset": offset}
             if refresh:
                 params["refresh"] = "true"
-            r = requests.get(f"{WEBAPP_BASE_URL}/api/orders/all", headers=headers, params=params, timeout=25)
+            r = requests.get(f"{WEBAPP_BASE_URL}/api/orders/all", headers=headers, params=params, timeout=20)
             data = r.json()
             if not data.get("ok"):
                 if not raw_orders:
@@ -431,10 +445,10 @@ def get_all_orders(refresh: bool = False):
             
             page_orders = data.get("orders", [])
             for o in page_orders:
-                # Remove products which have no tracking
+                # Remove products which have no tracking or no account
                 status_str = str(o.get("status") or "").strip().lower()
-                stage_key = str(o.get("stage_key") or status_str or "ordered").strip().lower()
-                if "no tracking" in status_str or "removed" in status_str or stage_key in ["none", "removed"]:
+                stage_key = str(o.get("stage_key") or "").strip().lower()
+                if not stage_key or stage_key in ["none", "removed", ""] or "no tracking" in status_str or "removed" in status_str:
                     continue
 
                 onum = o.get("order_num")
@@ -451,21 +465,24 @@ def get_all_orders(refresh: bool = False):
                 break
         order_nums = [o.get("order_num") for o in raw_orders if o.get("order_num")]
 
-        missing = [on for on in order_nums if on not in order_details_cache or not order_details_cache[on].get("delivery_mobile")]
+        missing = [on for on in order_nums if on not in order_details_cache or (not order_details_cache[on].get("delivery_mobile") and not order_details_cache[on].get("no_account"))]
         if missing:
-            with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
                 list(executor.map(fetch_order_address_sync, missing))
             save_order_details_cache()
 
         clean_orders = []
         for o in raw_orders:
-            status_str = str(o.get("status") or "Ordered").strip()
-            stage_key = str(o.get("stage_key") or status_str.lower() or "ordered").strip().lower()
-            if stage_key in ["none", "removed"]:
-                continue
             onum = o.get("order_num")
             cached_addr = order_details_cache.get(onum, {})
-            
+            if cached_addr.get("no_account"):
+                continue
+
+            status_str = str(o.get("status") or "Ordered").strip()
+            stage_key = str(o.get("stage_key") or "").strip().lower()
+            if not stage_key or stage_key in ["none", "removed", ""]:
+                continue
+
             clean_orders.append({
                 "order_num": onum,
                 "status": o.get("status", "Ordered"),
@@ -502,6 +519,12 @@ def get_order_detail(order_num: str = Query(..., description="Order Number")):
         r = requests.get(f"{WEBAPP_BASE_URL}/api/orders/{order_num}", headers=headers, timeout=20)
         data = r.json()
         if not data.get("ok"):
+            order_details_cache[order_num] = {
+                "no_account": True,
+                "error": data.get("error", "No account available"),
+                "updated_at": time.time()
+            }
+            save_order_details_cache()
             return JSONResponse(status_code=400, content={"ok": False, "error": data.get("error", "Order detail not found")})
 
         raw_detail = data.get("detail", {})
