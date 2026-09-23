@@ -26,14 +26,12 @@ import android.widget.Toast;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 public class MainActivity extends AppCompatActivity {
 
     public static final String APP_URL = "http://72.62.231.27:8080/";
 
     private WebView webView;
-    private SwipeRefreshLayout swipeRefreshLayout;
     private ProgressBar progressBar;
     private ValueCallback<Uri[]> fileUploadCallback;
     private final static int FILE_CHOOSER_RESULT_CODE = 1001;
@@ -49,12 +47,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         webView = findViewById(R.id.webView);
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         progressBar = findViewById(R.id.progressBar);
 
-        // Meesho Pink color for pull-to-refresh
-        swipeRefreshLayout.setColorSchemeColors(0xFFF43397);
-        swipeRefreshLayout.setOnRefreshListener(() -> webView.reload());
+        // Smooth scrolling configuration
+        webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+        webView.setOverScrollMode(View.OVER_SCROLL_IF_CONTENT_SCROLLS);
+        webView.setVerticalScrollBarEnabled(false);
+        webView.setHorizontalScrollBarEnabled(false);
 
         // WebView Settings
         WebSettings ws = webView.getSettings();
@@ -100,12 +99,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onPageFinished(WebView view, String url) {
                 progressBar.setVisibility(View.GONE);
-                swipeRefreshLayout.setRefreshing(false);
             }
 
             @Override
             public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-                swipeRefreshLayout.setRefreshing(false);
                 progressBar.setVisibility(View.GONE);
             }
         });
