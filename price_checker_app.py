@@ -33,6 +33,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 MARGIN_CONFIG_FILE = os.path.join(DATA_DIR, "margin_config.json")
 ORDERS_CACHE_FILE = os.path.join(DATA_DIR, "orders_enriched_cache.json")
 ZIP_PATH = os.path.join(BASE_DIR, "meesho_hub_portable.zip")
+APK_PATH = os.path.join(BASE_DIR, "MeeshoHub.apk")
 MANIFEST_PATH = os.path.join(BASE_DIR, "manifest.json")
 SW_PATH = os.path.join(BASE_DIR, "sw.js")
 
@@ -190,17 +191,23 @@ def get_sw():
         return FileResponse(SW_PATH, media_type="application/javascript")
     return JSONResponse(status_code=404, content={"error": "Not found"})
 
-# ----------------- 0. DOWNLOAD PORTABLE WEB APP ZIP -----------------
+# ----------------- 0. DOWNLOAD ANDROID APP (APK) OR PORTABLE ZIP -----------------
 @app.get("/download")
 @app.get("/api/download-app")
 def download_portable_app():
+    if os.path.exists(APK_PATH):
+        return FileResponse(
+            path=APK_PATH,
+            filename="MeeshoHub.apk",
+            media_type="application/vnd.android.package-archive"
+        )
     if os.path.exists(ZIP_PATH):
         return FileResponse(
             path=ZIP_PATH,
             filename="meesho_hub_portable.zip",
             media_type="application/zip"
         )
-    raise HTTPException(status_code=404, detail="Portable app package not found")
+    raise HTTPException(status_code=404, detail="App package not found")
 
 # ----------------- 1. AUTOCOMPLETE / SEARCH SUGGESTIONS -----------------
 @app.get("/api/search/suggestions")
