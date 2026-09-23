@@ -37,7 +37,7 @@ MANIFEST_PATH = os.path.join(BASE_DIR, "manifest.json")
 SW_PATH = os.path.join(BASE_DIR, "sw.js")
 
 WEBAPP_BASE_URL = os.getenv("WEBAPP_BASE_URL", "https://pricetrackerpro.fojadomain.fun")
-WEBAPP_TOKEN = os.getenv("WEBAPP_TOKEN", "")
+WEBAPP_TOKEN = os.getenv("WEBAPP_TOKEN", "1729719181.5053a8bd2706f61b")
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -431,10 +431,10 @@ def get_all_orders(refresh: bool = False):
             
             page_orders = data.get("orders", [])
             for o in page_orders:
-                # Remove products which have no tracking (empty stage_key, removed, or untracked)
-                stage_key = str(o.get("stage_key") or "").strip().lower()
+                # Remove products which have no tracking
                 status_str = str(o.get("status") or "").strip().lower()
-                if not stage_key or stage_key in ["", "none"] or "no tracking" in status_str or "removed" in status_str:
+                stage_key = str(o.get("stage_key") or status_str or "ordered").strip().lower()
+                if "no tracking" in status_str or "removed" in status_str or stage_key in ["none", "removed"]:
                     continue
 
                 onum = o.get("order_num")
@@ -459,8 +459,9 @@ def get_all_orders(refresh: bool = False):
 
         clean_orders = []
         for o in raw_orders:
-            stage_key = str(o.get("stage_key") or "").strip().lower()
-            if not stage_key or stage_key in ["", "none"]:
+            status_str = str(o.get("status") or "Ordered").strip()
+            stage_key = str(o.get("stage_key") or status_str.lower() or "ordered").strip().lower()
+            if stage_key in ["none", "removed"]:
                 continue
             onum = o.get("order_num")
             cached_addr = order_details_cache.get(onum, {})
